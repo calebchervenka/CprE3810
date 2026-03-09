@@ -89,7 +89,19 @@ architecture structure of RISCV_Processor is
     );
   end component;
 
-  component 
+  component reg_file is
+    port(
+      i_Clk : in std_logic;
+      i_Rst : in std_logic;
+      i_RegWr : in std_logic;
+      i_Rs1Addr : in std_logic_vector(4 downto 0);
+      i_Rs2Addr : in std_logic_vector(4 downto 0);
+      i_RdAddr : in std_logic_vector(4 downto 0);
+      i_RdData : in std_logic_vector(31 downto 0);
+      o_Rs1Data : out std_logic_vector(31 downto 0);
+      o_Rs2Data : out std_logic_vector(31 downto 0)
+    );
+  end component;
 
 begin
   s_Ovfl <= '0'; -- RISC-V does not have hardware overflow detection.
