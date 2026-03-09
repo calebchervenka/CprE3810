@@ -96,6 +96,10 @@ begin
   s_nor_result <= not (i_a or i_b);
 
   -- SLT operation (set if less than, signed)
+  -- TODO: Implement SLT using a structural approach
+  --        1. Subtract i_b from i_a using the sub_inst ripple adder.
+  --        2. Check the sign bit of the result and the overflow to determine if i_a < i_b.
+  --        3. Set s_slt_result to 1 if i_a < i_b, otherwise set it to 0.
   s_slt_result <= (0 => '1', others => '0') when signed(i_a) < signed(i_b) else (others => '0');
 
   -- Shift operations (using behavioral shifts)

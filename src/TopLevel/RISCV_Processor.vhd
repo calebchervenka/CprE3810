@@ -71,6 +71,25 @@ architecture structure of RISCV_Processor is
 
   -- TODO: You may add any additional signals or components your implementation 
   --       requires below this comment
+  component fetch_logic is
+    port(
+      i_imm    : in std_logic_vector(31 downto 0);
+      i_Branch : in std_logic;
+      i_Clk    : in std_logic;
+      i_Rst    : in std_logic;
+      o_PC     : out std_logic_vector(31 downto 0)
+    );
+  end component;
+
+  component ALU is
+    port(
+      i_a : in std_logic_vector(31 downto 0);
+      i_b : in std_logic_vector(31 downto 0);
+      o_result : out std_logic_vector(31 downto 0)
+    );
+  end component;
+
+  component 
 
 begin
   s_Ovfl <= '0'; -- RISC-V does not have hardware overflow detection.
