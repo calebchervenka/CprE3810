@@ -71,6 +71,21 @@ architecture structure of RISCV_Processor is
 
   -- TODO: You may add any additional signals or components your implementation 
   --       requires below this comment
+
+  -- Signals
+  s_ALU_a : std_logic_vector(N-1 downto 0);
+  s_ALU_b : std_logic_vector(N-1 downto 0);
+  s_ALU_Result : std_logic_vector(N-1 downto 0);
+
+  s_Rs1Data : std_logic_vector(N-1 downto 0);
+  s_Rs2Data : std_logic_vector(N-1 downto 0);
+
+  s_ImmExt : std_logic_vector(N-1 downto 0); -- TODO: This should be the sign-extended immediate value extracted from the instruction
+
+  -- Control Signals
+  s_Branch : std_logic; -- TODO: This control signal should be high when the instruction is a branch instruction and the branch condition is met (e.g., for BEQ, when Rs1Data = Rs2Data)
+
+  -- Components
   component fetch_logic is
     port(
       i_imm    : in std_logic_vector(31 downto 0);
@@ -103,6 +118,16 @@ architecture structure of RISCV_Processor is
     );
   end component;
 
+  component mux2t1_N is
+    generic(N : integer);
+    port(
+      i_S : in std_logic;
+      i_D0 : in std_logic_vector(N-1 downto 0);
+      i_D1 : in std_logic_vector(N-1 downto 0);
+      o_O : out std_logic_vector(N-1 downto 0)
+    );
+  end component;
+
 begin
   s_Ovfl <= '0'; -- RISC-V does not have hardware overflow detection.
   -- TODO: This is required to be your final input to your instruction memory. This provides a feasible method to externally load the memory module which means that the synthesis tool must assume it knows nothing about the values stored in the instruction memory. If this is not included, much, if not all of the design is optimized out because the synthesis tool will believe the memory to be all zeros.
@@ -132,6 +157,62 @@ begin
   -- TODO: Ensure that s_Halt is connected to an output control signal produced from decoding the Halt instruction (Opcode: 01 0100)
 
   -- TODO: Implement the rest of your processor below this comment! 
+  regfile : reg_file
+  generic map(N => 32)
+  port map(
+    i_Clk => iCLK,
+    i_Rst => iRST,
+    i_RegWr => s_RegWr,
+    i_Rs1Addr => s_Rs1Addr,
+    i_Rs2Addr => s_Rs2Addr,
+    i_RdAddr => s_RegWrAddr,
+    i_RdData => s_RegWrData,
+    o_Rs1Data => s_Rs1Data,
+    o_Rs2Data => s_Rs2Data
+  );
+  s_DMemData <= s_Rs2Data;
+  s_ALU_a <= s_Rs1Data;
+
+  -- Mux for s_ALU_b to select between register data and immediate value (for I-type instructions)
+  mux_alu_b : mux2t1_N
+  generic map(N => 32)
+  port map(
+    i_S => s_ALUSrc, -- TODO: This control signal should be high for I-type instructions and low for R-type instructions
+    i_D0 => s_Rs2Data,
+    i_D1 => s_ImmExt, -- TODO: This should be the sign-extended immediate value extracted from the instruction
+    o_O => s_ALU_b
+  );
+
+  -- ALU instance
+  arithmetic_logic_unit : ALU
+  port map(
+    i_a => s_ALU_a,
+    i_b => s_ALU_b,
+    o_result => s_ALU_Result
+  );
+
+  -- Fetch Logic
+  fetch_logic_inst : fetch_logic
+  port map(
+    i_imm => s_ImmExt, -- TODO: This should be the sign-extended immediate value extracted from the instruction, used for branch target calculation
+    i_Branch => s_Branch, -- TODO: This control signal should be high when the instruction is a branch instruction and the branch condition is met (e.g., for BEQ, when Rs1Data = Rs2Data)
+    i_Clk => iCLK,
+    i_Rst => iRST,
+    o_PC => s_PC
+  );
+
+  -- Immediate Generator
+  imm_gen_inst : imm_gen
+  port map(
+    i_Inst => s_Inst,
+    o_ImmExt => s_ImmExt
+  );
+
+
+  -- TODO:
+  -- 2. Implement control unit to generate control signals based on the instruction opcode and funct3/funct7 fields
+  -- 3. Connect control signals to the appropriate components (e.g., ALU, register file, data memory)
+  -- 4. Implement logic to handle branches and jumps
 
 end structure;
 
