@@ -1,3 +1,18 @@
+-------------------------------------------------------------------------
+-- Caleb Chervenka
+-- Computer Engineering Undergraduate
+-- Iowa State University
+-------------------------------------------------------------------------
+
+
+-- tb_reg_file.vhd
+-------------------------------------------------------------------------
+-- DESCRIPTION: This file contains a testbench for a register file.
+
+-- 02/18/2026 by CC::Design created.
+-------------------------------------------------------------------------
+
+
 library IEEE;
 use IEEE.std_logic_1164.all;
 use work.bus_32.all;

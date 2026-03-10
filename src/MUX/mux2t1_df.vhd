@@ -1,12 +1,17 @@
 -------------------------------------------------------------------------
 -- Caleb Chervenka
--- Created 1/28/2025
+-- Computer Engineering Undergraduate
+-- Iowa State University
 -------------------------------------------------------------------------
 
--- mux2t1.vhd
+
+-- mux2t1_df.vhd
 -------------------------------------------------------------------------
--- Implementation of a 2:1 MUX with dataflow
+-- DESCRIPTION: This file contains an implementation of a 2:1 MUX with a dataflow architecture.
+
+-- 01/28/2026 by CC::Design created.
 -------------------------------------------------------------------------
+
 
 library IEEE;
 use IEEE.std_logic_1164.all;

@@ -1,3 +1,18 @@
+-------------------------------------------------------------------------
+-- Caleb Chervenka
+-- Computer Engineering Undergraduate
+-- Iowa State University
+-------------------------------------------------------------------------
+
+
+-- ripple_adder.vhd
+-------------------------------------------------------------------------
+-- DESCRIPTION: This file contains an implementation of a ripple carry adder using structural VHDL.
+
+-- 03/08/2026 by CC::Design created.
+-------------------------------------------------------------------------
+
+
 library IEEE;
 use IEEE.std_logic_1164.all;
 

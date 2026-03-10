@@ -1,3 +1,18 @@
+-------------------------------------------------------------------------
+-- Caleb Chervenka
+-- Computer Engineering Undergraduate
+-- Iowa State University
+-------------------------------------------------------------------------
+
+
+-- ALU.vhd
+-------------------------------------------------------------------------
+-- DESCRIPTION: This file contains a structural implementation of an Arithmetic Logic Unit (ALU).
+
+-- 02/18/2026 by CC::Design created.
+-------------------------------------------------------------------------
+
+
 library IEEE;
 
 use IEEE.std_logic_1164.all;

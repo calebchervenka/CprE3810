@@ -1,3 +1,18 @@
+-------------------------------------------------------------------------
+-- Caleb Chervenka
+-- Computer Engineering Undergraduate
+-- Iowa State University
+-------------------------------------------------------------------------
+
+
+-- tb_decoder5to32.vhd
+-------------------------------------------------------------------------
+-- DESCRIPTION: This file contains a testbench for a 5:32 decoder.
+
+-- 02/18/2026 by CC::Design created.
+-------------------------------------------------------------------------
+
+
 library IEEE;
 use IEEE.std_logic_1164.all;
 

@@ -1,3 +1,18 @@
+-------------------------------------------------------------------------
+-- Caleb Chervenka
+-- Computer Engineering Undergraduate
+-- Iowa State University
+-------------------------------------------------------------------------
+
+
+-- mux32t1_32.vhd
+-------------------------------------------------------------------------
+-- DESCRIPTION: This file contains an implementation of a 32:1 32-bit MUX with a dataflow architecture.
+
+-- 02/18/2026 by CC::Design created.
+-------------------------------------------------------------------------
+
+
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;

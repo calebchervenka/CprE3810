@@ -1,3 +1,18 @@
+-------------------------------------------------------------------------
+-- Caleb Chervenka
+-- Computer Engineering Undergraduate
+-- Iowa State University
+-------------------------------------------------------------------------
+
+
+-- fetch_logic.vhd
+-------------------------------------------------------------------------
+-- DESCRIPTION: This file contains a structural implementation of a fetch logic unit that calculates the next PC value based on the current PC, an immediate value, and a branch signal.
+
+-- 03/07/2026 by CC::Design created.
+-------------------------------------------------------------------------
+
+
 library IEEE;
 
 use IEEE.std_logic_1164.all;

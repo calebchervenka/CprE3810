@@ -1,3 +1,18 @@
+-------------------------------------------------------------------------
+-- Caleb Chervenka
+-- Computer Engineering Undergraduate
+-- Iowa State University
+-------------------------------------------------------------------------
+
+
+-- reg_file.vhd
+-------------------------------------------------------------------------
+-- DESCRIPTION: This file contains an implementation of a 32-bit, 32-register register file with a dataflow architecture.
+
+-- 02/18/2026 by CC::Design created.
+-------------------------------------------------------------------------
+
+
 library IEEE;
 use IEEE.std_logic_1164.all;
 use work.bus_32.all;

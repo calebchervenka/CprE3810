@@ -1,3 +1,21 @@
+-------------------------------------------------------------------------
+-- Caleb Chervenka
+-- Computer Engineering Undergraduate
+-- Iowa State University
+-------------------------------------------------------------------------
+
+
+-- imm_gen.vhd
+-------------------------------------------------------------------------
+-- DESCRIPTION: This file contains a structural implementation of an immediate value generator.
+--  The immediate value generator takes a 32-bit instruction as input and produces a 32-bit immediate value as output. 
+--  The immediate value is generated based on the instruction type, which is determined by the opcode (bits [6:0] of the instruction).
+--  The immediate value is then sign-extended to 32 bits.
+
+-- 03/07/2026 by CC::Design created.
+-------------------------------------------------------------------------
+
+
 library IEEE;
 
 use IEEE.std_logic_1164.all;

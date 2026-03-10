@@ -1,4 +1,18 @@
--- N-bit register
+-------------------------------------------------------------------------
+-- Caleb Chervenka
+-- Computer Engineering Undergraduate
+-- Iowa State University
+-------------------------------------------------------------------------
+
+
+-- reg_N.vhd
+-------------------------------------------------------------------------
+-- DESCRIPTION: This file contains an implementation of an N-bit register.
+
+-- 02/18/2026 by CC::Design created.
+-------------------------------------------------------------------------
+
+
 library IEEE;
 use IEEE.std_logic_1164.all;
 

@@ -1,3 +1,18 @@
+-------------------------------------------------------------------------
+-- Caleb Chervenka
+-- Computer Engineering Undergraduate
+-- Iowa State University
+-------------------------------------------------------------------------
+
+
+-- mux8t1_N.vhd
+-------------------------------------------------------------------------
+-- DESCRIPTION: This file contains an implementation of a 8:1 N-bit MUX with a structural architecture.
+
+-- 03/07/2026 by CC::Design created.
+-------------------------------------------------------------------------
+
+
 library IEEE;
 use IEEE.std_logic_1164.all;
 
