@@ -5,7 +5,7 @@
 -------------------------------------------------------------------------
 
 
--- fetch_logic_tb.vhd
+-- tb_fetch_logic.vhd
 -------------------------------------------------------------------------
 -- DESCRIPTION: This file contains a testbench for the fetch logic unit.
 
@@ -17,10 +17,10 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
-entity fetch_logic_tb is
-end fetch_logic_tb;
+entity tb_fetch_logic is
+end tb_fetch_logic;
 
-architecture behavior of fetch_logic_tb is
+architecture behavior of tb_fetch_logic is
 
   component fetch_logic
     port(
