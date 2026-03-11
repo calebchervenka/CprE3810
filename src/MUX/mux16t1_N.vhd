@@ -60,26 +60,26 @@ architecture structural of mux16t1_N is
 begin
 
   -- Level 1: Select based on i_S(3)
-  mux_l1_0: mux2t1_N generic map(N) port map(i_S(3), i_D0, i_D1, l1_0);
-  mux_l1_1: mux2t1_N generic map(N) port map(i_S(3), i_D2, i_D3, l1_1);
-  mux_l1_2: mux2t1_N generic map(N) port map(i_S(3), i_D4, i_D5, l1_2);
-  mux_l1_3: mux2t1_N generic map(N) port map(i_S(3), i_D6, i_D7, l1_3);
-  mux_l1_4: mux2t1_N generic map(N) port map(i_S(3), i_D8, i_D9, l1_4);
-  mux_l1_5: mux2t1_N generic map(N) port map(i_S(3), i_D10, i_D11, l1_5);
-  mux_l1_6: mux2t1_N generic map(N) port map(i_S(3), i_D12, i_D13, l1_6);
-  mux_l1_7: mux2t1_N generic map(N) port map(i_S(3), i_D14, i_D15, l1_7);
+  mux_l1_0: mux2t1_N generic map(N) port map(i_S(0), i_D0, i_D1, l1_0);
+  mux_l1_1: mux2t1_N generic map(N) port map(i_S(0), i_D2, i_D3, l1_1);
+  mux_l1_2: mux2t1_N generic map(N) port map(i_S(0), i_D4, i_D5, l1_2);
+  mux_l1_3: mux2t1_N generic map(N) port map(i_S(0), i_D6, i_D7, l1_3);
+  mux_l1_4: mux2t1_N generic map(N) port map(i_S(0), i_D8, i_D9, l1_4);
+  mux_l1_5: mux2t1_N generic map(N) port map(i_S(0), i_D10, i_D11, l1_5);
+  mux_l1_6: mux2t1_N generic map(N) port map(i_S(0), i_D12, i_D13, l1_6);
+  mux_l1_7: mux2t1_N generic map(N) port map(i_S(0), i_D14, i_D15, l1_7);
 
   -- Level 2: Select based on i_S(2)
-  mux_l2_0: mux2t1_N generic map(N) port map(i_S(2), l1_0, l1_1, l2_0);
-  mux_l2_1: mux2t1_N generic map(N) port map(i_S(2), l1_2, l1_3, l2_1);
-  mux_l2_2: mux2t1_N generic map(N) port map(i_S(2), l1_4, l1_5, l2_2);
-  mux_l2_3: mux2t1_N generic map(N) port map(i_S(2), l1_6, l1_7, l2_3);
+  mux_l2_0: mux2t1_N generic map(N) port map(i_S(1), l1_0, l1_1, l2_0);
+  mux_l2_1: mux2t1_N generic map(N) port map(i_S(1), l1_2, l1_3, l2_1);
+  mux_l2_2: mux2t1_N generic map(N) port map(i_S(1), l1_4, l1_5, l2_2);
+  mux_l2_3: mux2t1_N generic map(N) port map(i_S(1), l1_6, l1_7, l2_3);
 
   -- Level 3: Select based on i_S(1)
-  mux_l3_0: mux2t1_N generic map(N) port map(i_S(1), l2_0, l2_1, l3_0);
-  mux_l3_1: mux2t1_N generic map(N) port map(i_S(1), l2_2, l2_3, l3_1);
+  mux_l3_0: mux2t1_N generic map(N) port map(i_S(2), l2_0, l2_1, l3_0);
+  mux_l3_1: mux2t1_N generic map(N) port map(i_S(2), l2_2, l2_3, l3_1);
 
   -- Level 4: Select based on i_S(0)
-  mux_l4: mux2t1_N generic map(N) port map(i_S(0), l3_0, l3_1, o_O);
+  mux_l4: mux2t1_N generic map(N) port map(i_S(3), l3_0, l3_1, o_O);
 
 end structural;

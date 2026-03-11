@@ -74,17 +74,23 @@ architecture structure of RISCV_Processor is
   --       requires below this comment
 
   -- Signals
-  s_ALU_a : std_logic_vector(N-1 downto 0);
-  s_ALU_b : std_logic_vector(N-1 downto 0);
-  s_ALU_Result : std_logic_vector(N-1 downto 0);
+  signal s_ALU_a : std_logic_vector(N-1 downto 0);
+  signal s_ALU_b : std_logic_vector(N-1 downto 0);
+  signal s_ALU_Result : std_logic_vector(N-1 downto 0);
 
-  s_Rs1Data : std_logic_vector(N-1 downto 0);
-  s_Rs2Data : std_logic_vector(N-1 downto 0);
+  signal s_Rs1Data : std_logic_vector(N-1 downto 0);
+  signal s_Rs2Data : std_logic_vector(N-1 downto 0);
+  signal s_Rs1Addr : std_logic_vector(4 downto 0);
+  signal s_Rs2Addr : std_logic_vector(4 downto 0);
 
-  s_ImmExt : std_logic_vector(N-1 downto 0); -- TODO: This should be the sign-extended immediate value extracted from the instruction
+  signal s_ImmExt : std_logic_vector(N-1 downto 0); -- TODO: This should be the sign-extended immediate value extracted from the instruction
 
   -- Control Signals
-  s_Branch : std_logic; -- TODO: This control signal should be high when the instruction is a branch instruction and the branch condition is met (e.g., for BEQ, when Rs1Data = Rs2Data)
+  signal s_Branch : std_logic; -- TODO: This control signal should be high when the instruction is a branch instruction and the branch condition is met (e.g., for BEQ, when Rs1Data = Rs2Data)
+  signal s_ALUSrc : std_logic;
+  signal s_MemToReg : std_logic;
+  signal s_ALUCtrl  : std_logic_vector(4-1 downto 0);
+
 
   -- Components
   component fetch_logic is
@@ -92,7 +98,9 @@ architecture structure of RISCV_Processor is
       i_imm    : in std_logic_vector(31 downto 0);
       i_Branch : in std_logic;
       i_Clk    : in std_logic;
+      i_WE     : in std_logic;
       i_Rst    : in std_logic;
+      i_PC     : in std_logic_vector(31 downto 0);
       o_PC     : out std_logic_vector(31 downto 0)
     );
   end component;
@@ -101,6 +109,7 @@ architecture structure of RISCV_Processor is
     port(
       i_a : in std_logic_vector(31 downto 0);
       i_b : in std_logic_vector(31 downto 0);
+      i_ALUCtrl : in std_logic_vector(3 downto 0);
       o_result : out std_logic_vector(31 downto 0)
     );
   end component;
@@ -119,6 +128,13 @@ architecture structure of RISCV_Processor is
     );
   end component;
 
+  component imm_gen is
+    port(
+        i_instr : in std_logic_vector(31 downto 0);
+        o_imm   : out std_logic_vector(31 downto 0)
+    );
+  end component;
+
   component mux2t1_N is
     generic(N : integer);
     port(
@@ -126,6 +142,26 @@ architecture structure of RISCV_Processor is
       i_D0 : in std_logic_vector(N-1 downto 0);
       i_D1 : in std_logic_vector(N-1 downto 0);
       o_O : out std_logic_vector(N-1 downto 0)
+    );
+  end component;
+
+  component controlLogic is
+    port (
+        imem : in std_logic_vector(31 downto 0); -- input for Imem
+        --aluCtrl : out std_logic_vector(2 downto 0); -- output for ALUCtrl | IMPLEMENTED AS A SEPARATE COMPONENT
+        branch : out std_logic; -- output for Branch
+        aluSrc : out std_logic; -- output for ALUSrc
+        memToReg : out std_logic; -- output for MemToReg
+        memWrite : out std_logic; -- output for MemWrite
+        regWrite : out std_logic; -- output for RegWrite
+        halt    : out std_logic
+    );
+  end component;
+
+  component ALUcontrol is
+    port(
+        instruction: in std_logic_vector(31 downto 0); -- 32 bit instruction input
+        aluCtrl : out std_logic_vector(3 downto 0) -- 4 bit ALU control output
     );
   end component;
 
@@ -158,8 +194,18 @@ begin
   -- TODO: Ensure that s_Halt is connected to an output control signal produced from decoding the Halt instruction (Opcode: 01 0100)
 
   -- TODO: Implement the rest of your processor below this comment! 
-  regfile : reg_file
+
+  -- Mux for s_RegWrData to select between ALU result and memory (for MemToReg signal)
+  mux_reg_file_data : mux2t1_N
   generic map(N => 32)
+  port map(
+    i_S   => s_MemToReg,
+    i_D0  => s_ALU_Result,
+    i_D1  => s_DMemOut,
+    o_O   => s_RegWrData
+  );
+
+  regfile : reg_file
   port map(
     i_Clk => iCLK,
     i_Rst => iRST,
@@ -178,9 +224,9 @@ begin
   mux_alu_b : mux2t1_N
   generic map(N => 32)
   port map(
-    i_S => s_ALUSrc, -- TODO: This control signal should be high for I-type instructions and low for R-type instructions
+    i_S => s_ALUSrc,
     i_D0 => s_Rs2Data,
-    i_D1 => s_ImmExt, -- TODO: This should be the sign-extended immediate value extracted from the instruction
+    i_D1 => s_ImmExt,
     o_O => s_ALU_b
   );
 
@@ -189,30 +235,56 @@ begin
   port map(
     i_a => s_ALU_a,
     i_b => s_ALU_b,
+    i_ALUCtrl => s_ALUCtrl,
     o_result => s_ALU_Result
   );
+  oALUOut <= s_ALU_Result; -- Connect ALU result to output port
+  s_DMemAddr <= s_ALU_Result;
 
   -- Fetch Logic
   fetch_logic_inst : fetch_logic
   port map(
-    i_imm => s_ImmExt, -- TODO: This should be the sign-extended immediate value extracted from the instruction, used for branch target calculation
-    i_Branch => s_Branch, -- TODO: This control signal should be high when the instruction is a branch instruction and the branch condition is met (e.g., for BEQ, when Rs1Data = Rs2Data)
+    i_imm => s_ImmExt,
+    i_Branch => s_Branch,
     i_Clk => iCLK,
+    i_WE => '1', -- Always enable writing to the PC register
     i_Rst => iRST,
+    i_PC => s_IMemAddr,
     o_PC => s_PC
   );
+
+  -- Get Rs1, Rs2, and Rd addresses from instruction
+  s_Rs1Addr <= s_Inst(19 downto 15);
+  s_Rs2Addr <= s_Inst(24 downto 20);
+  s_RegWrAddr <= s_Inst(11 downto 7);
+
 
   -- Immediate Generator
   imm_gen_inst : imm_gen
   port map(
-    i_Inst => s_Inst,
-    o_ImmExt => s_ImmExt
+    i_instr => s_Inst,
+    o_imm => s_ImmExt
   );
 
 
-  -- TODO:
-  -- 2. Implement control unit to generate control signals based on the instruction opcode and funct3/funct7 fields
-  -- 3. Connect control signals to the appropriate components (e.g., ALU, register file, data memory)
+  
+  control_unit : controlLogic
+  port map(
+    imem      => s_Inst,
+    branch    => s_Branch,
+    aluSrc    => s_ALUSrc,
+    memToReg  => s_MemToReg,
+    memWrite  => s_DMemWr,
+    regWrite  => s_RegWr,
+    halt      => s_halt
+  );
+
+  alu_control_unit : ALUControl
+  port map(
+    instruction => s_Inst,
+    aluCtrl     => s_ALUCtrl
+  );
+
   -- 4. Implement logic to handle branches and jumps
 
 end structure;

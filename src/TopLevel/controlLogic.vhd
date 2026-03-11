@@ -32,7 +32,8 @@ entity controlLogic is
         aluSrc : out std_logic; -- output for ALUSrc
         memToReg : out std_logic; -- output for MemToReg
         memWrite : out std_logic; -- output for MemWrite
-        regWrite : out std_logic -- output for RegWrite
+        regWrite : out std_logic; -- output for RegWrite
+        halt    : out std_logic
     );
 end controlLogic;
 
@@ -79,5 +80,11 @@ begin
         '1' when "1100111", -- jalr | I type
         '1' when "1101111", -- jal | J type
         '0' when others;
+    
+    with opcode select
+        halt <=
+        '1' when "1110011",
+        '0' when others;
+
     
     end dataflow;

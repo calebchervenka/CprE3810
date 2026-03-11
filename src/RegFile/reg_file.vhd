@@ -25,17 +25,17 @@ entity reg_file is
     );
 
     port(
-        i_WD        : in std_logic_vector(data_width-1 downto 0);       -- Write data
-        o_RD0       : out std_logic_vector(data_width-1 downto 0);      -- Read data 0
-        o_RD1       : out std_logic_vector(data_width-1 downto 0);      -- Read data 1
+        i_RdData    : in std_logic_vector(data_width-1 downto 0);       -- Write data
+        o_Rs1Data   : out std_logic_vector(data_width-1 downto 0);      -- Read data 0
+        o_Rs2Data   : out std_logic_vector(data_width-1 downto 0);      -- Read data 1
 
-        i_RS0       : in std_logic_vector(address_width-1 downto 0);    -- Register source 0, address for read data 0
-        i_RS1       : in std_logic_vector(address_width-1 downto 0);    -- Register source 1, address for read data 1
-        i_RD        : in std_logic_vector(address_width-1 downto 0);    -- Register destination
+        i_Rs1Addr       : in std_logic_vector(address_width-1 downto 0);    -- Register source 0, address for read data 0
+        i_Rs2Addr       : in std_logic_vector(address_width-1 downto 0);    -- Register source 1, address for read data 1
+        i_RdAddr        : in std_logic_vector(address_width-1 downto 0);    -- Register destination
 
         i_CLK       : in std_logic; -- Clock
         i_RST       : in std_logic; -- Reset all registers
-        i_WE        : in std_logic  -- Write enable
+        i_RegWr     : in std_logic  -- Write enable
     );
 end reg_file;
 
@@ -80,14 +80,14 @@ architecture structural of reg_file is
     
 begin
     c_register_decoder : decoder5to32 port map(
-        i_S     => i_RD,
+        i_S     => i_RdAddr,
         o_Q     => s_rd_decoder
     );
 
     c_and_N : for i in 32-1 downto 0 generate
         c_and_I : andg2 port map(
             i_A     => s_rd_decoder(i),
-            i_B     => i_WE,
+            i_B     => i_RegWr,
             o_F     => s_rd_we(i)
         );
     end generate c_and_N;
@@ -100,21 +100,21 @@ begin
             i_CLK   => i_CLK,
             i_RST   => i_RST,
             i_WE    => s_rd_we(i),
-            i_D     => i_WD,
+            i_D     => i_RdData,
             o_Q     => s_reg_d(i)
         );
     end generate c_reg_N;
 
     c_mux_0 : mux32to1_32 port map(
         i_D => s_reg_d,
-        i_S => i_RS0,
-        o_Q => o_RD0
+        i_S => i_Rs1Addr,
+        o_Q => o_Rs1Data
     );
 
     c_mux_1 : mux32to1_32 port map(
         i_D     => s_reg_d,
-        i_S     => i_RS1,
-        o_Q     => o_RD1
+        i_S     => i_Rs2Addr,
+        o_Q     => o_Rs2Data
     );
 
 end structural;
