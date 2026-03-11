@@ -26,8 +26,8 @@ use ieee.std_logic_1164.all;
 
 entity controlLogic is
     port (
-        iMem : in std_logic_vector(31 downto 0); -- input for Imem
-        aluCtrl : out std_logic_vector(2 downto 0); -- output for ALUCtrl
+        imem : in std_logic_vector(31 downto 0); -- input for Imem
+        --aluCtrl : out std_logic_vector(2 downto 0); -- output for ALUCtrl | IMPLEMENTED AS A SEPARATE COMPONENT
         branch : out std_logic; -- output for Branch
         aluSrc : out std_logic; -- output for ALUSrc
         memToReg : out std_logic; -- output for MemToReg
@@ -40,66 +40,44 @@ architecture dataflow of controlLogic is
     signal opcode : std_logic_vector(6 downto 0);
 begin
 
-    opcode <= iMem(6 downto 0);
+    opcode <= imem(6 downto 0); -- extracts the specific opcode from the instruction memory
 
-    -- add function3 and function7 here?
+    -- aluCtrl not accounted for here, refer to ALUcontrol
 
-    -- combinational control logic based on opcode
-    process(opcode)
-    begin
-        
-        case opcode is
-            when "0110011" => -- R-type
-                branch <= '0';
-                aluSrc <= '0';
-                memToReg <= '0';
-                memWrite <= '0';
-                regWrite <= '1';
-
-            when "0010011" => -- I-type
-                branch <= '0';
-                aluSrc <= '1';
-                memToReg <= '0';
-                memWrite <= '0';
-                regWrite <= '1';
-
-            when "0100011" => -- S-type
-                branch <= '0';
-                aluSrc <= '1';
-                memToReg <= '0';
-                memWrite <= '1';
-                regWrite <= '0';
-
-            when "1100011" => -- SB-type (branch)
-                branch <= '1';
-                aluSrc <= '0';
-                memToReg <= '0';
-                memWrite <= '0';
-                regWrite <= '0';
-
-            when "0010111" => -- U-type
-                branch <= '0';
-                aluSrc <= '1';
-                memToReg <= '0';
-                memWrite <= '0';
-                regWrite <= '1';
-
-            when "1101111" => -- J-type
-                branch <= '1';
-                aluSrc <= '0';
-                memToReg <= '0';
-                memWrite <= '0';
-                regWrite <= '1';
-
-        end case;
-    end process;
-end dataflow;
-
-
-
-
-
-
-
-
-
+    with opcode select
+        branch <=
+        '1' when "0010111", -- auipc | U type
+        '1' when "1100011", -- SB
+        '1' when "1100111", -- jalr | I type
+        '1' when "1101111", -- jal | J type
+        '0' when others;
+    
+    with opcode select
+        aluSrc <=
+        '1' when "0000011", -- load
+        '1' when "0010011", -- I type
+        '1' when "0100011", -- store
+        '1' when "0110111", -- load upper imm
+        '0' when others;
+    
+    with opcode select
+        memToReg <=
+        '1' when "0000011", -- load
+        '0' when others;
+    
+    with opcode select
+        memWrite <=
+        '1' when "0100011", -- store
+        '0' when others;
+    
+    with opcode select
+        regwrite <=
+        '1' when "0000011", -- load
+        '1' when "0010011", -- I type
+        '1' when "0110011", -- R type
+        '1' when "0110111", -- load upper imm
+        '1' when "1100111", -- jalr | I type
+        '1' when "1101111", -- jal | J type
+        '0' when others;
+    
+    end dataflow;
