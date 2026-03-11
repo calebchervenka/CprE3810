@@ -8,7 +8,8 @@
 -- tb_controlLogic.vhd
 -------------------------------------------------------------------------
 -- DESCRIPTION: This file implements a test bench for the control logic system
-
+-- 03/10/2026 by DS::Design created.
+-- 03/11/2026 by CC::JAL Test cases corrected.
 -------------------------------------------------------------------------
 
 library ieee;
@@ -64,7 +65,7 @@ begin
     tb_imem <= x"00000063"; -- SB (1100011)
     wait for 20 ns;
 
-    tb_imem <= x"00000073"; -- JAL (1101111)
+    tb_imem <= x"0000006F"; -- JAL (1101111)
     wait for 20 ns;
 
     wait;
