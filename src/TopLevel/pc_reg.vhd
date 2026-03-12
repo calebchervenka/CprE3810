@@ -1,24 +1,26 @@
 library IEEE;
 
 use IEEE.std_logic_1164.ALL;
-use IEEE.std_numeric_std.ALL;
+use IEEE.numeric_std.ALL;
 
 entity pc_reg is
     generic(
-        DATA_WIDTH : integer := 32
+        ADDR_WIDTH  : integer := 32;
+        DATA_WIDTH  : integer := 32
     );
     port(
-        i_Imm : in std_logic_vector(DATA_WIDTH - 1 downto 0);
+        i_Imm : in std_logic_vector(ADDR_WIDTH - 1 downto 0);
         i_Branch : in std_logic;
         i_WrPC : in std_logic;
         i_Rst : in std_logic;
         i_Clk : in std_logic;
+        o_PC    : out std_logic_vector(ADDR_WIDTH - 1 downto 0)
     );
 end pc_reg;
 
 architecture structural of pc_reg is
     component reg_N is
-        generic(N : integer := DATA_WIDTH);
+        generic(N : integer := ADDR_WIDTH);
         port(
             i_Clk   : in std_logic;
             i_Rst   : in std_logic;
@@ -29,7 +31,7 @@ architecture structural of pc_reg is
     end component;
 
     component ripple_adder is
-        generic(N : integer := DATA_WIDTH);
+        generic(N : integer := ADDR_WIDTH);
         port(
             i_A     : in std_logic_vector(N-1 downto 0);
             i_B     : in std_logic_vector(N-1 downto 0);
@@ -40,7 +42,7 @@ architecture structural of pc_reg is
     end component;
 
     component mux2t1_N is
-        generic(N : integer := DATA_WIDTH);
+        generic(N : integer := ADDR_WIDTH);
         port(
             i_S          : in std_logic;
             i_D0         : in std_logic_vector(N-1 downto 0);
@@ -49,10 +51,10 @@ architecture structural of pc_reg is
         );
     end component;
 
-    signal s_PC         : std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal s_PC_next    : std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal s_PC_plus4   : std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal s_PC_branch  : std_logic_vector(DATA_WIDTH - 1 downto 0);
+    signal s_PC         : std_logic_vector(ADDR_WIDTH - 1 downto 0);
+    signal s_PC_next    : std_logic_vector(ADDR_WIDTH - 1 downto 0);
+    signal s_PC_plus4   : std_logic_vector(ADDR_WIDTH - 1 downto 0);
+    signal s_PC_branch  : std_logic_vector(ADDR_WIDTH - 1 downto 0);
 
     begin
         reg : reg_N
@@ -89,5 +91,6 @@ architecture structural of pc_reg is
             i_D1    => s_PC_branch,
             o_O     => s_PC_next
         );
-    end
+
+        o_PC <= s_PC;
 end structural;
