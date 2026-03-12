@@ -36,6 +36,10 @@ end  RISCV_Processor;
 
 architecture structure of RISCV_Processor is
 
+  ------------------------------
+  --    Signals
+  ------------------------------
+
   -- Required data memory signals
   signal s_DMemWr       : std_logic; -- TODO: use this signal as the final active high data memory write enable signal
   signal s_DMemAddr     : std_logic_vector(N-1 downto 0); -- TODO: use this signal as the final data memory address input
@@ -57,7 +61,26 @@ architecture structure of RISCV_Processor is
 
   -- Required overflow signal -- for overflow exception detection
   signal s_Ovfl         : std_logic;  -- this signal indicates an overflow exception would have been initiated
+  
+  -- Control signals
+  signal c_Branch   : std_logic;
+  signal c_ALUSrc   : std_logic;
+  signal c_MemToReg : std_logic;
+  signal c_MemWrite : std_logic;
+  signal c_RegWrite : std_logic;
 
+
+  -- Data signals
+  signal s_Imm    : std_logic_vector(N-1 downto 0);
+  signal s_Reg1Addr   : std_logic_vector()
+  signal s_Reg1Data   : std_logic_vector(N-1 downto 0);
+  signal s_Reg2Data   : std_logic_vector(N-1 downto 0);
+  signal s_ALUOut     : std_logic_vector(N-1 downto 0);
+
+
+  ------------------------------
+  --    Components
+  ------------------------------
   component mem is
     generic(ADDR_WIDTH : integer;
             DATA_WIDTH : integer);
@@ -68,17 +91,9 @@ architecture structure of RISCV_Processor is
           we           : in std_logic := '1';
           q            : out std_logic_vector((DATA_WIDTH -1) downto 0));
     end component;
-
-  
-  -- Control signals
-  signal c_Branch  : std_logic;
-
-  -- Data signals
-  signal s_Imm    : std_logic_vector(N-1 downto 0);
   
   component pc_reg is
-    generic(ADDR_WIDTH : integer;
-            DATA_WIDTH : integer);
+    generic(DATA_WIDTH : integer);
     port(
       i_Imm     : in std_logic_vector(DATA_WIDTH-1 downto 0);
       i_Branch  : in std_logic;
@@ -86,6 +101,31 @@ architecture structure of RISCV_Processor is
       i_Rst     : in std_logic;
       i_Clk     : in std_logic;
       o_PC      : out std_logic_vector(ADDR_WIDTH-1 downto 0));
+  end component;
+
+  component reg_file is
+    generic(address_width : integer;
+            reg_count     : integer;
+            data_width    : integer);
+    port(
+      i_WD    : in std_logic_vector(data_width-1 downto 0);
+      o_RD0   : out std_logic_vector(data_width-1 downto 0);
+      o_RD1   : out std_logic_vector(data_width-1 downto 0);
+      i_RS0   : in std_logic_vector(address_width-1 downto 0);
+      i_RS1   : in std_logic_vector(address_width-1 downto 0);
+      i_RD    : in std_logic_vector(address_width-1 downto 0);
+      i_CLK   : in std_logic;
+      i_RST   : in std_logic;
+      i_WE    : in std_logic;
+    );
+  end component;
+
+  component mux2t1_N is
+    generic(N : integer);
+    port(i_S  : in std_logic;
+         i_D0 : in std_logic_vector(N-1 downto 0);
+         i_D1 : in std_logic_vector(N-1 downto 0);
+         o_O  : in std_logic_vector(N-1 downto 0));
   end component;
 
 begin
@@ -116,15 +156,39 @@ begin
 
   PCReg : pc_reg
     generic map(ADDR_WIDTH => 32,
-                DATA_WIDTH => 32)
+                DATA_WIDTH => N)
     port map(
       i_Imm     => s_Imm,
       i_Branch  => c_Branch,
       i_WrPc    => '1',
       i_Rst     => iRst,
       i_Clk     => iClk,
-      o_PC      => s_PC
-    );
+      o_PC      => s_PC);
+
+  reg_data_mux : mux2t1_N
+    generic map(N => DATA_WIDTH)
+    port map(i_S  => c_MemToReg,
+             i_D0 => s_ALUOut,
+             i_D1 => s_DMemOut,
+             o_O  => s_RegWrData);
+
+  Reg_File : reg_file
+    generic map(address_width => REG_ADDR_WIDTH,
+                reg_count     => REG_COUNT,
+                data_width    => N);
+    port map(
+        i_WD    => s_RegWrData,
+        o_RD0   => s_Reg1Data,
+        o_RD1   => s_Reg2Data,
+        i_RS0   => s_Inst(19 downto 15),
+        i_RS1   => s_Inst(24 downto 20),
+        i_RD    => s_Inst(11 downto 7),
+        i_CLK   => iClk,
+        i_RST   => iRst,
+        i_WE    => c_RegWrite);
+  s_DMemData <= s_Reg1Data;
+
+
 
   -- TODO: Ensure that s_Halt is connected to an output control signal produced from decoding the Halt instruction (Opcode: 01 0100)
 
