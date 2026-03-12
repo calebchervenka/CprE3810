@@ -6,3 +6,9 @@
 
 # VS Code
 .vscode/
+
+# Questa ModelSim
+work/
+
+# Toolflow
+output/
