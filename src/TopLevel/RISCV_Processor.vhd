@@ -40,26 +40,20 @@ architecture structure of RISCV_Processor is
   --    Signals
   ------------------------------
 
-  -- Required data memory signals
   signal s_DMemWr       : std_logic; -- TODO: use this signal as the final active high data memory write enable signal
   signal s_DMemAddr     : std_logic_vector(N-1 downto 0); -- TODO: use this signal as the final data memory address input
   signal s_DMemData     : std_logic_vector(N-1 downto 0); -- TODO: use this signal as the final data memory data input
   signal s_DMemOut      : std_logic_vector(N-1 downto 0); -- TODO: use this signal as the data memory output
  
-  -- Required register file signals 
   signal s_RegWr        : std_logic; -- TODO: use this signal as the final active high write enable input to the register file
   signal s_RegWrAddr    : std_logic_vector(4 downto 0); -- TODO: use this signal as the final destination register address input
   signal s_RegWrData    : std_logic_vector(N-1 downto 0); -- TODO: use this signal as the final data memory data input
 
-  -- Required instruction memory signals
   signal s_IMemAddr     : std_logic_vector(N-1 downto 0); -- Do not assign this signal, assign to s_PC instead
   signal s_PC : std_logic_vector(N-1 downto 0); -- TODO: use this signal as your intended final instruction memory address input.
   signal s_Inst         : std_logic_vector(N-1 downto 0); -- TODO: use this signal as the instruction signal 
 
-  -- Required halt signal -- for simulation
-  signal s_Halt         : std_logic;  -- TODO: this signal indicates to the simulation that intended program execution has completed. (Use WFI with Opcode: 111 0011 func3: 000 and func12: 000100000101 -- func12 is imm field from I-format)
-
-  -- Required overflow signal -- for overflow exception detection
+  signal s_Halt         : std_logic;
   signal s_Ovfl         : std_logic;  -- this signal indicates an overflow exception would have been initiated
   
   -- Control signals
@@ -67,15 +61,18 @@ architecture structure of RISCV_Processor is
   signal c_ALUSrc   : std_logic;
   signal c_MemToReg : std_logic;
   signal c_MemWrite : std_logic;
-  signal c_RegWrite : std_logic;
+  -- signal c_RegWrite : std_logic;
 
 
   -- Data signals
-  signal s_Imm    : std_logic_vector(N-1 downto 0);
-  signal s_Reg1Addr   : std_logic_vector()
+  signal s_Imm        : std_logic_vector(N-1 downto 0);
   signal s_Reg1Data   : std_logic_vector(N-1 downto 0);
   signal s_Reg2Data   : std_logic_vector(N-1 downto 0);
-  signal s_ALUOut     : std_logic_vector(N-1 downto 0);
+  signal s_ALU_A      : std_logic_vector(N-1 downto 0);
+  signal s_ALU_B      : std_logic_vector(N-1 downto 0);
+  signal s_ALUCtrl    : std_logic_vector(ALU_CTRL_WIDTH-1 downto 0);
+  signal s_ALUResult  : std_logic_vector(N-1 downto 0);
+  signal s_ALUZero    : std_logic;
 
 
   ------------------------------
@@ -91,6 +88,19 @@ architecture structure of RISCV_Processor is
           we           : in std_logic := '1';
           q            : out std_logic_vector((DATA_WIDTH -1) downto 0));
     end component;
+
+  component control_unit is
+    generic(DATA_WIDTH : integer);
+    port(
+      i_Inst      : in std_logic_vector(DATA_WIDTH-1 downto 0);
+      o_Branch    : out std_logic;
+      o_ALUSrc    : out std_logic;
+      o_MemToReg  : out std_logic;
+      o_MemWrite  : out std_logic;
+      o_RegWrite  : out std_logic;
+      o_Halt      : out std_logic
+    );
+  end component;
   
   component pc_reg is
     generic(DATA_WIDTH : integer);
@@ -100,7 +110,15 @@ architecture structure of RISCV_Processor is
       i_WrPc    : in std_logic;
       i_Rst     : in std_logic;
       i_Clk     : in std_logic;
-      o_PC      : out std_logic_vector(ADDR_WIDTH-1 downto 0));
+      o_PC      : out std_logic_vector(DATA_WIDTH-1 downto 0));
+  end component;
+
+  component imm_gen is
+    generic(DATA_WIDTH : integer);
+    port(
+      i_Instr    : in std_logic_vector(DATA_WIDTH-1 downto 0);
+      o_Imm     : out std_logic_vector(DATA_WIDTH-1 downto 0)
+    );
   end component;
 
   component reg_file is
@@ -116,8 +134,24 @@ architecture structure of RISCV_Processor is
       i_RD    : in std_logic_vector(address_width-1 downto 0);
       i_CLK   : in std_logic;
       i_RST   : in std_logic;
-      i_WE    : in std_logic;
+      i_WE    : in std_logic
     );
+  end component;
+
+  component ACU is
+    generic(DATA_WIDTH : integer);
+    port(i_Inst     : in std_logic_vector(DATA_WIDTH-1 downto 0);
+         o_ALUCtrl  : out std_logic_vector(ALU_CTRL_WIDTH-1 downto 0)
+    );
+  end component;
+
+  component ALU is
+    generic(DATA_WIDTH : integer);
+    port(i_A          : in std_logic_vector(DATA_WIDTH-1 downto 0);
+         i_B          : in std_logic_vector(DATA_WIDTH-1 downto 0);
+         i_ALUCtrl    : in std_logic_vector(ALU_CTRL_WIDTH-1 downto 0);
+         o_ALUResult  : out std_logic_vector(DATA_WIDTH-1 downto 0);
+         o_Zero       : out std_logic);
   end component;
 
   component mux2t1_N is
@@ -125,7 +159,7 @@ architecture structure of RISCV_Processor is
     port(i_S  : in std_logic;
          i_D0 : in std_logic_vector(N-1 downto 0);
          i_D1 : in std_logic_vector(N-1 downto 0);
-         o_O  : in std_logic_vector(N-1 downto 0));
+         o_O  : out std_logic_vector(N-1 downto 0));
   end component;
 
 begin
@@ -154,9 +188,27 @@ begin
              we   => s_DMemWr,
              q    => s_DMemOut);
 
+  controls : control_unit
+  generic map(DATA_WIDTH => N)
+  port map(
+    i_Inst  => s_Inst,
+    o_Branch  => c_Branch,
+    o_ALUSrc  => c_ALUSrc,
+    o_MemToReg  => c_MemToReg,
+    o_MemWrite  => c_MemWrite,
+    o_RegWrite  => s_RegWr,
+    o_Halt      => s_Halt
+  );
+
+  immediate_generator : imm_gen
+  generic map(DATA_WIDTH => N)
+  port map(
+    i_Instr   => s_Inst,
+    o_Imm     => s_Imm
+  );
+
   PCReg : pc_reg
-    generic map(ADDR_WIDTH => 32,
-                DATA_WIDTH => N)
+    generic map(DATA_WIDTH => N)
     port map(
       i_Imm     => s_Imm,
       i_Branch  => c_Branch,
@@ -166,31 +218,63 @@ begin
       o_PC      => s_PC);
 
   reg_data_mux : mux2t1_N
-    generic map(N => DATA_WIDTH)
+    generic map(N => N)
     port map(i_S  => c_MemToReg,
-             i_D0 => s_ALUOut,
+             i_D0 => s_ALUResult,
              i_D1 => s_DMemOut,
              o_O  => s_RegWrData);
 
-  Reg_File : reg_file
+
+  
+  s_RegWrAddr <= s_Inst(11 downto 7);
+
+  register_file : reg_file
     generic map(address_width => REG_ADDR_WIDTH,
                 reg_count     => REG_COUNT,
-                data_width    => N);
+                data_width    => N)
     port map(
         i_WD    => s_RegWrData,
         o_RD0   => s_Reg1Data,
         o_RD1   => s_Reg2Data,
         i_RS0   => s_Inst(19 downto 15),
         i_RS1   => s_Inst(24 downto 20),
-        i_RD    => s_Inst(11 downto 7),
+        i_RD    => s_RegWrAddr,
         i_CLK   => iClk,
         i_RST   => iRst,
-        i_WE    => c_RegWrite);
-  s_DMemData <= s_Reg1Data;
+        i_WE    => s_RegWr);
+  s_DMemData  <= s_Reg1Data;
+
+
+  -- ALU Inputs
+  s_ALU_A     <= s_Reg1Data;
+
+  mux_alu_b : mux2t1_N
+    generic map(N => N)
+    port map(i_S  => c_ALUSrc,
+             i_D0 => s_Reg2Data,
+             i_D1 => s_Imm,
+             o_O  => s_ALU_B);
+
+  alu_control : acu
+    generic map(DATA_WIDTH => N)
+    port map(i_Inst     => s_Inst,
+             o_ALUCtrl  => s_ALUCtrl);
+
+  alu_inst : alu
+    generic map(DATA_WIDTH => N)
+    port map(i_A      => s_ALU_A,
+             i_B      => s_ALU_B,
+             i_ALUCtrl  => s_ALUCtrl,
+             o_ALUResult  => s_ALUResult,
+             o_Zero    => s_ALUZero);
+  oALUOut <= s_ALUResult;
 
 
 
-  -- TODO: Ensure that s_Halt is connected to an output control signal produced from decoding the Halt instruction (Opcode: 01 0100)
+  -- TODO:
+  -- 4. Connect s_halt
+  --    (Use WFI with Opcode: 111 0011 func3: 000 and func12: 000100000101 -- func12 is imm field from I-format)
+  --    
 
   -- TODO: Implement the rest of your processor below this comment! 
 

@@ -3,12 +3,14 @@ library IEEE;
 use IEEE.std_logic_1164.ALL;
 use IEEE.numeric_std.ALL;
 
+use work.RISCV_types.all;
+
 entity pc_reg is
     generic(
         DATA_WIDTH  : integer := 32
     );
     port(
-        i_Imm : in std_logic_vector(ADDR_WIDTH - 1 downto 0);
+        i_Imm : in std_logic_vector(DATA_WIDTH - 1 downto 0);
         i_Branch : in std_logic;
         i_WrPC : in std_logic;
         i_Rst : in std_logic;
@@ -41,7 +43,7 @@ architecture structural of pc_reg is
     end component;
 
     component mux2t1_N is
-        generic(N : integer := ADDR_WIDTH);
+        generic(N : integer := DATA_WIDTH);
         port(
             i_S          : in std_logic;
             i_D0         : in std_logic_vector(N-1 downto 0);

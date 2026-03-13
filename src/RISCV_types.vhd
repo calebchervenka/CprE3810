@@ -21,6 +21,8 @@ package RISCV_types is
   constant REG_COUNT      : integer := 32;
   constant REG_ADDR_WIDTH : integer := 5; --   REG_ADDR_WIDTH >= log2(REG_COUNT)
 
+  constant ALU_CTRL_WIDTH : integer := 4;
+
   -- Example record type. Declare whatever types you need here
   type control_t is record
     reg_wr : std_logic;
