@@ -195,7 +195,7 @@ begin
     o_Branch  => c_Branch,
     o_ALUSrc  => c_ALUSrc,
     o_MemToReg  => c_MemToReg,
-    o_MemWrite  => c_MemWrite,
+    o_MemWrite  => s_DMemWr,
     o_RegWrite  => s_RegWr,
     o_Halt      => s_Halt
   );
@@ -224,7 +224,7 @@ begin
              i_D1 => s_DMemOut,
              o_O  => s_RegWrData);
 
-
+  s_DMemAddr <= s_ALUResult;
   
   s_RegWrAddr <= s_Inst(11 downto 7);
 
@@ -242,7 +242,7 @@ begin
         i_CLK   => iClk,
         i_RST   => iRst,
         i_WE    => s_RegWr);
-  s_DMemData  <= s_Reg1Data;
+  s_DMemData  <= s_Reg2Data;
 
 
   -- ALU Inputs

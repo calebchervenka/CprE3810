@@ -37,20 +37,25 @@ architecture df of control_unit is
         with s_opcode select
             o_ALUSrc <=
             '1' when "0010011", -- ADDI
+            '1' when "0100011", -- SW
+            '1' when "0000011", -- LW
             '0' when others;
 
         with s_opcode select
             o_MemToReg <=
+            '1' when "0000011", -- LW
             '0' when others;
 
         with s_opcode select
             o_MemWrite <=
+            '1' when "0100011", -- SW
             '0' when others;
 
         with s_opcode select
             o_RegWrite <=
             '1' when "0010011", -- ADDI
             '1' when "0110011", -- ADD
+            '1' when "0000011", -- LW
             '0' when others;
         
         with s_opcode select

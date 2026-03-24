@@ -27,7 +27,10 @@ architecture df of ACU is
  
         o_ALUCtrl <=
         x"0" when s_func3 = "000" and s_func7 = "0000000" else  -- ADD
+        x"0" when opcode = "0010011" and s_func3 = "000" else   -- ADDI
         x"1" when s_func3 = "000" and s_func7 = "0100000" else  -- SUB
+        x"0" when opcode = "0000011" and s_func3 = "010" else   -- LW
+        x"0" when opcode = "0100011" and s_func3 = "010" else   -- SW
 
         "0000";
 end df;

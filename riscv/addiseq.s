@@ -29,11 +29,34 @@ sub   x13, x1,  x4        # Place 1 - 4  in x13
 sub   x14, x1,  x5        # Place 1 - 5  in x14
 sub   x15, x2,  x1        # Place 2 - 1  in x15
 
-# lw and sw
-sw    x1, 0(x0)		# Store 1 at address 0
-sw    x2, 4(x0)		# Store 2 at address 4
-sw    x3, 8(x0)		# Store 3 at address 8
-sw    x4, 12(x0)		# Store 4 at address 12
-sw    x5, 16(x0)		# Store 5 at address 16
+# Store
+addi t1, x0, 1024
+add t1, t1, t1
+add t1, t1, t1
+
+addi t1, t1, 1
+
+add t1, t1, t1
+add t1, t1, t1
+add t1, t1, t1
+add t1, t1, t1
+add t1, t1, t1
+add t1, t1, t1
+add t1, t1, t1
+add t1, t1, t1
+add t1, t1, t1
+add t1, t1, t1
+add t1, t1, t1
+add t1, t1, t1
+add t1, t1, t1
+add t1, t1, t1
+add t1, t1, t1
+add t1, t1, t1
+
+sw x1, 0(t1)
+
+lw x5, 0(t1)
+
+# TODO: Implement Load
 
 wfi
