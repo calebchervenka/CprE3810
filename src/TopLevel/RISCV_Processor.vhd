@@ -60,8 +60,6 @@ architecture structure of RISCV_Processor is
   signal c_Branch   : std_logic;
   signal c_ALUSrc   : std_logic;
   signal c_MemToReg : std_logic;
-  signal c_MemWrite : std_logic;
-  -- signal c_RegWrite : std_logic;
 
 
   -- Data signals
