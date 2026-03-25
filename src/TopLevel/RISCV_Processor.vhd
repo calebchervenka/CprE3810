@@ -269,14 +269,5 @@ begin
              o_Zero    => s_ALUZero);
   oALUOut <= s_ALUResult;
 
-
-
-  -- TODO:
-  -- 4. Connect s_halt
-  --    (Use WFI with Opcode: 111 0011 func3: 000 and func12: 000100000101 -- func12 is imm field from I-format)
-  --    
-
-  -- TODO: Implement the rest of your processor below this comment! 
-
 end structure;
 
