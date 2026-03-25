@@ -26,12 +26,19 @@ architecture df of ACU is
         s_func7 <= i_inst(31 downto 25);
  
         o_ALUCtrl <=
-        x"0" when s_func3 = "000" and s_func7 = "0000000" else  -- ADD
+        x"0" when opcode = "0110011" and s_func3 = "000" and s_func7 = "0000000" else  -- ADD
         x"0" when opcode = "0010011" and s_func3 = "000" else   -- ADDI
         x"0" when opcode = "0000011" and s_func3 = "010" else   -- LW
         x"0" when opcode = "0100011" and s_func3 = "010" else   -- SW
-        x"1" when s_func3 = "000" and s_func7 = "0100000" else  -- SUB
-        x"2" when opcode =  "0010011" and s_func3 = "001" else  -- SLLI
+        x"1" when opcode = "0110011" and s_func3 = "000" and s_func7 = "0100000" else  -- SUB
+        x"2" when opcode = "0010011" and s_func3 = "001" else   -- SLLI
+        x"3" when opcode = "0010011" and s_func3 = "111" else   -- ANDI
+        x"3" when opcode = "0110011" and s_func3 = "111" else   -- AND
+        x"4" when opcode = "0010011" and s_func3 = "110" else   -- ORI
+        x"4" when opcode = "0110011" and s_func3 = "110" else   -- OR
+        x"5" when opcode = "0010011" and s_func3 = "100" else   -- XORI
+        x"5" when opcode = "0110011" and s_func3 = "100" else   -- XOR
+        x"6" when opcode = "0110111" else                       -- LUI
 
         "0000";
 end df;

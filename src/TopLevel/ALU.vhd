@@ -60,14 +60,19 @@ architecture structural of ALU is
              o_O    : out std_logic_vector(N-1 downto 0));
     end component;
 
-    signal s_add : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal s_sub : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal s_sll : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_add    : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_sub    : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_sll    : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_and    : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_or     : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_xor    : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_lui    : std_logic_vector(DATA_WIDTH-1 downto 0);
+
 begin
 
-    ----------------------------
-    --     Operations
-    ----------------------------
+    --------------------------------
+    --     Component Operations
+    --------------------------------
     adder : ripple_adder
         generic map(N => DATA_WIDTH)
         port map(i_A    => i_A,
@@ -88,6 +93,17 @@ begin
         port map(i_D        => i_A,
                  i_Shift    => i_B(4 downto 0),
                  o_Q        => s_sll);
+            
+
+    --------------------------------
+    --     Logical Operations
+    --------------------------------
+    s_and   <= i_A and  i_B;
+    s_or    <= i_A or   i_B;
+    s_xor   <= i_A xor  i_B;
+
+    s_lui(31 downto 12)     <= i_B(31 downto 12);
+    s_lui(11 downto 0)      <= (others => '0');
 
     ------------------------------
     --    Output Selection
@@ -98,10 +114,10 @@ begin
                  i_D0   => s_add,
                  i_D1   => s_sub,
                  i_D2   => s_sll,
-                 i_D3   => (others => '0'),
-                 i_D4   => (others => '0'),
-                 i_D5   => (others => '0'),
-                 i_D6   => (others => '0'),
+                 i_D3   => s_and,
+                 i_D4   => s_or,
+                 i_D5   => s_xor,
+                 i_D6   => s_lui,
                  i_D7   => (others => '0'),
                  i_D8   => (others => '0'),
                  i_D9   => (others => '0'),
