@@ -64,7 +64,5 @@ architecture df of control_unit is
             o_Halt <=
             '1' when "1110011",
             '0' when others;
-    
-    -- HALT:
-    -- Use WFI with Opcode: 111 0011 func3: 000 and func12: 000100000101 -- func12 is imm field from I-format
+
 end df;
