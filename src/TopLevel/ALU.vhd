@@ -32,6 +32,12 @@ architecture structural of ALU is
              i_O    : out std_logic_vector(N-1 downto 0));
     end component;
 
+    component barrel_shifter_left is
+        Port (i_D       : in  std_logic_vector(31 downto 0);
+              i_shift   : in  std_logic_vector(4 downto 0);
+              o_Q       : out std_logic_vector(31 downto 0));
+    end component;
+
     component mux16t1_N is
         generic(N : integer);
         port(i_S    : in std_logic_vector(4-1 downto 0);
@@ -56,6 +62,7 @@ architecture structural of ALU is
 
     signal s_add : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal s_sub : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_sll : std_logic_vector(DATA_WIDTH-1 downto 0);
 begin
 
     ----------------------------
@@ -77,6 +84,11 @@ begin
                  o_Sum  => s_sub,
                  o_Cout => open);
 
+    shift_left : barrel_shifter_left
+        port map(i_D        => i_A,
+                 i_Shift    => i_B(4 downto 0),
+                 o_Q        => s_sll);
+
     ------------------------------
     --    Output Selection
     ------------------------------
@@ -85,7 +97,7 @@ begin
         port map(i_S    => i_ALUCtrl,
                  i_D0   => s_add,
                  i_D1   => s_sub,
-                 i_D2   => (others => '0'),
+                 i_D2   => s_sll,
                  i_D3   => (others => '0'),
                  i_D4   => (others => '0'),
                  i_D5   => (others => '0'),
