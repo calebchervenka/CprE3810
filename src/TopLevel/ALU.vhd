@@ -67,6 +67,10 @@ architecture structural of ALU is
     signal s_or     : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal s_xor    : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal s_lui    : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_lb     : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_lh     : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_lbu    : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_lhu    : std_logic_vector(DATA_WIDTH-1 downto 0);
 
 begin
 
@@ -118,10 +122,10 @@ begin
                  i_D4   => s_or,
                  i_D5   => s_xor,
                  i_D6   => s_lui,
-                 i_D7   => (others => '0'),
-                 i_D8   => (others => '0'),
-                 i_D9   => (others => '0'),
-                 i_D10  => (others => '0'),
+                 i_D7   => s_lb,
+                 i_D8   => s_lh,
+                 i_D9   => s_lbu,
+                 i_D10  => s_lhu,
                  i_D11  => (others => '0'),
                  i_D12  => (others => '0'),
                  i_D13  => (others => '0'),

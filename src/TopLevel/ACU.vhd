@@ -29,6 +29,10 @@ architecture df of ACU is
         x"0" when opcode = "0110011" and s_func3 = "000" and s_func7 = "0000000" else  -- ADD
         x"0" when opcode = "0010011" and s_func3 = "000" else   -- ADDI
         x"0" when opcode = "0000011" and s_func3 = "010" else   -- LW
+        x"0" when opcode = "0000011" and s_func3 = "000" else   -- LB
+        x"0" when opcode = "0000011" and s_func3 = "001" else   -- LH
+        x"0" when opcode = "0000011" and s_func3 = "100" else   -- LBU
+        x"0" when opcode = "0000011" and s_func3 = "101" else   -- LHU
         x"0" when opcode = "0100011" and s_func3 = "010" else   -- SW
         x"1" when opcode = "0110011" and s_func3 = "000" and s_func7 = "0100000" else  -- SUB
         x"2" when opcode = "0010011" and s_func3 = "001" else   -- SLLI
@@ -39,6 +43,7 @@ architecture df of ACU is
         x"5" when opcode = "0010011" and s_func3 = "100" else   -- XORI
         x"5" when opcode = "0110011" and s_func3 = "100" else   -- XOR
         x"6" when opcode = "0110111" else                       -- LUI
-
+        
+        -- instructions being implemented right now: LB, LBU, LH, LHU
         "0000";
 end df;

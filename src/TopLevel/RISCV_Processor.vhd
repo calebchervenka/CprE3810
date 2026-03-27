@@ -63,15 +63,35 @@ architecture structure of RISCV_Processor is
 
 
   -- Data signals
-  signal s_Imm        : std_logic_vector(N-1 downto 0);
-  signal s_Reg1Data   : std_logic_vector(N-1 downto 0);
-  signal s_Reg2Data   : std_logic_vector(N-1 downto 0);
-  signal s_ALU_A      : std_logic_vector(N-1 downto 0);
-  signal s_ALU_B      : std_logic_vector(N-1 downto 0);
-  signal s_ALUCtrl    : std_logic_vector(ALU_CTRL_WIDTH-1 downto 0);
-  signal s_ALUResult  : std_logic_vector(N-1 downto 0);
-  signal s_ALUZero    : std_logic;
+  signal s_Imm             : std_logic_vector(N-1 downto 0);
+  signal s_Reg1Data        : std_logic_vector(N-1 downto 0);
+  signal s_Reg2Data        : std_logic_vector(N-1 downto 0);
+  signal s_ALU_A           : std_logic_vector(N-1 downto 0);
+  signal s_ALU_B           : std_logic_vector(N-1 downto 0);
+  signal s_ALUCtrl         : std_logic_vector(ALU_CTRL_WIDTH-1 downto 0);
+  signal s_ALUResult       : std_logic_vector(N-1 downto 0);
+  signal s_ALUZero         : std_logic;
+  signal s_LoadData        : std_logic_vector(N-1 downto 0); -- output of load data mux that accounts for lb and lh instructions
+  signal s_ldMux1          : std_logic_vector(N-1 downto 0); -- output of mux that selects between lb and lh data based on opcode and func3
+  signal s_ldMux2          : std_logic_vector(N-1 downto 0); -- output of mux that selects between lh and lbu
+  signal s_ldMux3          : std_logic_vector(N-1 downto 0); -- output of mux that selects lhu 
 
+
+  -- Load Byte Signals
+  signal DMemSelectedByte  : std_logic_vector(7 downto 0); -- outputs the selected byte from the data memory output
+  signal s_DMemLBExtended  : std_logic_vector(N-1 downto 0); -- outputs the sign extended byte for lb instructino
+  signal s_IsLB            : std_logic; -- signal for lb instruction
+
+  signal s_DMEMLBUExtended : std_logic_vector(N-1 downto 0); -- outputs the zero extended byte for lbu instruction
+  signal s_IsLBU           : std_logic;
+
+  -- Load Half-Word Signals
+  signal DMemSelectedHalfWord : std_logic_vector(15 downto 0); -- outputs the selected half-word from the data memory output
+  signal s_DMemLHExtended     : std_logic_vector(N-1 downto 0); -- outputs the sign extended half-word for lh instruction
+  signal s_IsLH               : std_logic;
+
+  signal s_DMEMLHUExtended    : std_logic_vector(N-1 downto 0); -- outputs the zero extended half-word for lhu instruction
+  signal s_IsLHU              : std_logic;
 
   ------------------------------
   --    Components
@@ -219,7 +239,7 @@ begin
     generic map(N => N)
     port map(i_S  => c_MemToReg,
              i_D0 => s_ALUResult,
-             i_D1 => s_DMemOut,
+             i_D1 => s_LoadData, -- changed s_DMEMOut to s_LoadData to account for lb, lh, lbu, lhu instructions
              o_O  => s_RegWrData);
 
   s_DMemAddr <= s_ALUResult;
@@ -266,6 +286,73 @@ begin
              o_ALUResult  => s_ALUResult,
              o_Zero    => s_ALUZero);
   oALUOut <= s_ALUResult;
+
+  --------------------------------------------------
+  -- Load Instruction Handling (LB, LH, LBU, LHU)
+  --------------------------------------------------
+  
+-- chooses LB, LH, LBU, or LHU instruction based on opcode and func3
+  s_IsLB <= '1' when s_Inst(6 downto 0) = "0000011" and s_Inst(14 downto 12) = "000" else '0';
+  s_IsLH <= '1' when s_Inst(6 downto 0) = "0000011" and s_Inst(14 downto 12) = "001" else '0';
+  s_IsLBU <= '1' when s_Inst(6 downto 0) = "0000011" and s_Inst(14 downto 12) = "100" else '0';
+  s_IsLHU <= '1' when s_Inst(6 downto 0) = "0000011" and s_Inst(14 downto 12) = "101" else '0';
+
+  -- BYTE SELECTION (lb)
+  with s_ALUResult(1 downto 0) select
+    DMemSelectedByte <= s_DMemOut(7 downto 0) when "00",   -- byte 0
+                        s_DMemOut(15 downto 8) when "01",  -- byte 1
+                        s_DMemOut(23 downto 16) when "10", -- byte 2
+                        s_DMemOut(31 downto 24) when "11", -- byte 3
+                        (others => '0') when others;
+
+  -- HALF-WORD SELECTION (lh)
+  with s_ALUResult(1 downto 0) select
+    DMemSelectedHalfWord <= s_DMemOut(15 downto 0) when "00",  -- half-word 0
+                            s_DMemOut(31 downto 16) when "10", -- half-word 1
+                            (others => '0') when others;
+
+  -- SIGN EXTENDERS FOR LB AND LH                          
+  s_DMemLBExtended(7 downto 0) <= DmemSelectedByte; -- assigns selected byte to the least significant byte
+  s_DMemLBExtended(31 downto 8) <= (others => DMemSelectedByte(7)); -- sign extend the byte for lb instruction
+
+  s_DMemLHExtended(15 downto 0) <= DmemSelectedHalfWord; -- assigns selected half-word to the least significant half-word
+  s_DMemLHExtended(31 downto 16) <= (others => DMemSelectedHalfWord(15)); -- sign extend the half-word for lh instruction
+
+  -- ZERO EXTENDERS FOR LBU AND LHU
+  s_DMEMLBUExtended(7 downto 0) <= DmemSelectedByte; -- assigns selected byte to the least significant byte
+  s_DMEMLBUExtended(31 downto 8) <= (others => '0'); -- zero extend the byte for lbu instruction
+
+  s_DMEMLHUExtended(15 downto 0) <= DmemSelectedHalfWord; -- assigns selected half-word to the least significant half-word
+  s_DMEMLHUExtended(31 downto 16) <= (others => '0'); -- zero extend the half-word for lhu instruction
+
+  load_byte_mux : mux2t1_N
+    generic map(N => N)
+    port map(i_S  => s_IsLB,
+             i_D0 => s_DMemOut,
+             i_D1 => s_DMemLBExtended,
+             o_O  => s_ldMux1); -- output of this mux goes to another mux that selects between lb and lh data based on opcode and func3
+
+  load_halfword_mux : mux2t1_N
+    generic map(N => N)
+    port map(i_S => s_IsLH,
+             i_D0 => s_ldMux1, -- output of lb mux goes to this mux as the input for the case when it's not an lh instruction
+             i_D1 => s_DMemLHExtended,
+             o_O  => s_ldMux2); -- reusing s_LoadData as the output of this mux since lb and lh are mutually exclusive instructions
+
+  load_lbu_mux : mux2t1_N
+    generic map(N => N)
+    port map(i_S => s_IsLBU,
+             i_D0 => s_ldMux2, -- output of lh mux goes to this mux as the input for the case when it's not an lbu instruction
+             i_D1 => s_DMEMLBUExtended,
+             o_O  => s_ldMux3); -- output of this mux goes to another mux that selects between lh and lbu data based on opcode and func3
+    
+  load_lhu_mux : mux2t1_N
+    generic map(N => N)
+    port map(i_S => s_IsLHU,
+             i_D0 => s_ldMux3, -- output of lbu mux goes to this mux as the input for the case when it's not an lhu instruction
+             i_D1 => s_DMEMLHUExtended,
+             o_O  => s_LoadData); -- final output of the load data mux that accounts for lb, lh, lbu, and lhu instructions
+
 
 end structure;
 
