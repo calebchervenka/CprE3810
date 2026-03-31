@@ -58,7 +58,7 @@ architecture structure of RISCV_Processor is
   
   -- Control signals
   signal c_Branch   : std_logic;
-  signal c_ALUSrc   : std_logic;
+  signal c_ALUSrc   : std_logic_vector(1 downto 0);
   signal c_MemToReg : std_logic;
 
 
@@ -112,7 +112,7 @@ architecture structure of RISCV_Processor is
     port(
       i_Inst      : in std_logic_vector(DATA_WIDTH-1 downto 0);
       o_Branch    : out std_logic;
-      o_ALUSrc    : out std_logic;
+      o_ALUSrc    : out std_logic_vector(1 downto 0);
       o_MemToReg  : out std_logic;
       o_MemWrite  : out std_logic;
       o_RegWrite  : out std_logic;
@@ -177,6 +177,16 @@ architecture structure of RISCV_Processor is
     port(i_S  : in std_logic;
          i_D0 : in std_logic_vector(N-1 downto 0);
          i_D1 : in std_logic_vector(N-1 downto 0);
+         o_O  : out std_logic_vector(N-1 downto 0));
+  end component;
+
+  component mux4t1_N is
+    generic(N : integer);
+    port(i_S  : in std_logic_vector(1 downto 0);
+         i_D0 : in std_logic_vector(N-1 downto 0);
+         i_D1 : in std_logic_vector(N-1 downto 0);
+         i_D2 : in std_logic_vector(N-1 downto 0);
+         i_D3 : in std_logic_vector(N-1 downto 0);
          o_O  : out std_logic_vector(N-1 downto 0));
   end component;
 
@@ -264,13 +274,29 @@ begin
 
 
   -- ALU Inputs
-  s_ALU_A     <= s_Reg1Data;
+  -- s_ALU_A     <= s_Reg1Data;
 
-  mux_alu_b : mux2t1_N
+  mux_alu_a : mux2t1_N
+    generic map(N => N)
+    port map(i_S  => c_Branch,
+             i_D0 => s_Reg1Data,
+             i_D1 => s_PC,
+             o_O  => s_ALU_A);
+
+  -- mux_alu_b : mux2t1_N
+  --   generic map(N => N)
+  --   port map(i_S  => c_ALUSrc,
+  --            i_D0 => s_Reg2Data,
+  --            i_D1 => s_Imm,
+  --            o_O  => s_ALU_B);
+  
+  mux_alu_b : mux4t1_N
     generic map(N => N)
     port map(i_S  => c_ALUSrc,
              i_D0 => s_Reg2Data,
              i_D1 => s_Imm,
+             i_D2 => x"00000004",
+             i_D3 => x"00000000",
              o_O  => s_ALU_B);
 
   alu_control : acu

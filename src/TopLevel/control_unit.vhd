@@ -12,7 +12,7 @@ entity control_unit is
     port(
         i_Inst      : in std_logic_vector(DATA_WIDTH-1 downto 0);
         o_Branch    : out std_logic;
-        o_ALUSrc    : out std_logic;
+        o_ALUSrc    : out std_logic_vector(1 downto 0);
         o_MemToReg  : out std_logic;
         o_MemWrite  : out std_logic;
         o_RegWrite  : out std_logic;
@@ -32,15 +32,17 @@ architecture df of control_unit is
 
         with s_opcode select
             o_Branch <=
+            '1' when "1101111", -- JAL
             '0' when others;
         
         with s_opcode select
             o_ALUSrc <=
-            '1' when "0010011", -- ADDI, ANDI, ORI, XORI
-            '1' when "0100011", -- SW
-            '1' when "0000011", -- LW, LB, LH, LBU, LHU
-            '1' when "0110111", -- LUI
-            '0' when others;
+            "01" when "0010011", -- ADDI, ANDI, ORI, XORI
+            "01" when "0100011", -- SW
+            "01" when "0000011", -- LW, LB, LH, LBU, LHU
+            "01" when "0110111", -- LUI
+            "10" when "1101111", -- JAL
+            "00" when others;
 
         with s_opcode select
             o_MemToReg <=
@@ -58,6 +60,7 @@ architecture df of control_unit is
             '1' when "0110011", -- ADD, AND, OR, XOR
             '1' when "0000011", -- LW, LB, LH, LBU, LHU
             '1' when "0110111", -- LUI
+            '1' when "1101111", -- JAL
             '0' when others;
         
         with s_opcode select
