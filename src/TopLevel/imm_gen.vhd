@@ -41,6 +41,16 @@ architecture Structural of imm_gen is
         );
     end component;
 
+    component Mux2t1_N is
+        generic(N : integer);
+        port(
+            i_S   : in std_logic;
+            i_D0  : in std_logic_vector(N-1 downto 0);
+            i_D1  : in std_logic_vector(N-1 downto 0);
+            o_O   : out std_logic_vector(N-1 downto 0)
+        );
+    end component;
+
     signal s_imm_i : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal s_imm_s : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal s_imm_sb : std_logic_vector(DATA_WIDTH-1 downto 0);
@@ -48,6 +58,7 @@ architecture Structural of imm_gen is
     signal s_imm_uj : std_logic_vector(DATA_WIDTH-1 downto 0);
 
     signal s_mux_1 : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_mux_2 : std_logic_vector(DATA_WIDTH-1 downto 0);
 
 begin
     -- No Immediate:
@@ -94,10 +105,17 @@ begin
         o_O =>  s_mux_1
     );
 
+    mux_imm_2 : Mux2t1_N generic map(32) port map(
+        i_S     => i_instr(2),
+        i_D0    => s_imm_i,
+        i_D1    => s_imm_u,
+        o_O     => s_mux_2
+    );
+
     mux_imm_type : Mux8t1_N generic map(32) port map(
         i_S => i_instr(6 downto 4),
         i_D0 => s_imm_i,
-        i_D1 => s_imm_i,
+        i_D1 => s_mux_2, -- Sometimes i, sometimes u
         i_D2 => s_imm_s,
         i_D3 => s_imm_u,
         i_D4 => (others => '0'),

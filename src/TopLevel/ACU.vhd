@@ -34,6 +34,8 @@ architecture df of ACU is
         x"0" when opcode = "0000011" and s_func3 = "100" else   -- LBU
         x"0" when opcode = "0000011" and s_func3 = "101" else   -- LHU
         x"0" when opcode = "0100011" and s_func3 = "010" else   -- SW
+        x"0" when opcode = "1101111" else                       -- JAL
+        x"0" when opcode = "0010111" else                       -- AUIPC
         x"1" when opcode = "0110011" and s_func3 = "000" and s_func7 = "0100000" else  -- SUB
         x"1" when opcode = "1100011" and s_func3 = "000" else   -- BEQ
         x"2" when opcode = "0010011" and s_func3 = "001" else   -- SLLI

@@ -58,7 +58,8 @@ architecture structure of RISCV_Processor is
   
   -- Control signals
   signal c_Branch   : std_logic;
-  signal c_ALUSrc   : std_logic;
+  signal c_ALUSrcA  : std_logic_vector(1 downto 0);
+  signal c_ALUSrcB  : std_logic_vector(1 downto 0);
   signal c_MemToReg : std_logic;
 
 
@@ -76,6 +77,9 @@ architecture structure of RISCV_Processor is
   signal s_ldMux2          : std_logic_vector(N-1 downto 0); -- output of mux that selects between lh and lbu
   signal s_ldMux3          : std_logic_vector(N-1 downto 0); -- output of mux that selects lhu
   signal s_PCreg_Select    : std_logic; -- select for beq
+
+  signal s_ImmU            : std_logic_vector(N-1 downto 0); -- Upper Immediate
+  signal s_PCJ              : std_logic_vector(N-1 downto 0); -- Program Cursor OR bit 22
 
 
   -- Load Byte Signals
@@ -113,7 +117,8 @@ architecture structure of RISCV_Processor is
     port(
       i_Inst      : in std_logic_vector(DATA_WIDTH-1 downto 0);
       o_Branch    : out std_logic;
-      o_ALUSrc    : out std_logic;
+      o_ALUSrcA   : out std_logic_vector(1 downto 0);
+      o_ALUSrcB   : out std_logic_vector(1 downto 0);
       o_MemToReg  : out std_logic;
       o_MemWrite  : out std_logic;
       o_RegWrite  : out std_logic;
@@ -181,6 +186,16 @@ architecture structure of RISCV_Processor is
          o_O  : out std_logic_vector(N-1 downto 0));
   end component;
 
+  component mux4t1_N is
+    generic(N : integer);
+    port(i_S  : in std_logic_vector(1 downto 0);
+         i_D0 : in std_logic_vector(N-1 downto 0);
+         i_D1 : in std_logic_vector(N-1 downto 0);
+         i_D2 : in std_logic_vector(N-1 downto 0);
+         i_D3 : in std_logic_vector(N-1 downto 0);
+         o_O  : out std_logic_vector(N-1 downto 0));
+  end component;
+
 begin
   s_Ovfl <= '0';
   s_PCreg_Select <= c_Branch and s_ALUZero;
@@ -213,7 +228,8 @@ begin
   port map(
     i_Inst  => s_Inst,
     o_Branch  => c_Branch,
-    o_ALUSrc  => c_ALUSrc,
+    o_ALUSrcA  => c_ALUSrcA,
+    o_ALUSrcB  => c_ALUSrcB,
     o_MemToReg  => c_MemToReg,
     o_MemWrite  => s_DMemWr,
     o_RegWrite  => s_RegWr,
@@ -266,13 +282,36 @@ begin
 
 
   -- ALU Inputs
-  s_ALU_A     <= s_Reg1Data;
+  -- s_ALU_A     <= s_Reg1Data;  
 
-  mux_alu_b : mux2t1_N
+  s_PCJ <= (s_PC or x"00400000");
+
+  mux_alu_a : mux4t1_N
     generic map(N => N)
-    port map(i_S  => c_ALUSrc,
+    port map(i_S  => c_ALUSrcA,
+             i_D0 => s_Reg1Data,
+             i_D1 => s_PCJ,
+             i_D2 => x"00000000",
+             i_D3 => x"00000000",
+             o_O  => s_ALU_A);
+
+  -- mux_alu_b : mux2t1_N
+  --   generic map(N => N)
+  --   port map(i_S  => c_ALUSrcB,
+  --            i_D0 => s_Reg2Data,
+  --            i_D1 => s_Imm,
+  --            o_O  => s_ALU_B);
+  
+  s_ImmU(31 downto 12) <= s_Imm(19 downto 0);
+  s_ImmU(11 downto 0) <= (others => '0');
+
+  mux_alu_b : mux4t1_N
+    generic map(N => N)
+    port map(i_S  => c_ALUSrcB,
              i_D0 => s_Reg2Data,
              i_D1 => s_Imm,
+             i_D2 => x"00000004",
+             i_D3 => s_ImmU,
              o_O  => s_ALU_B);
 
   alu_control : acu
