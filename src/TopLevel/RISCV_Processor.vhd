@@ -74,7 +74,8 @@ architecture structure of RISCV_Processor is
   signal s_LoadData        : std_logic_vector(N-1 downto 0); -- output of load data mux that accounts for lb and lh instructions
   signal s_ldMux1          : std_logic_vector(N-1 downto 0); -- output of mux that selects between lb and lh data based on opcode and func3
   signal s_ldMux2          : std_logic_vector(N-1 downto 0); -- output of mux that selects between lh and lbu
-  signal s_ldMux3          : std_logic_vector(N-1 downto 0); -- output of mux that selects lhu 
+  signal s_ldMux3          : std_logic_vector(N-1 downto 0); -- output of mux that selects lhu
+  signal s_PCreg_Select    : std_logic; -- select for beq
 
 
   -- Load Byte Signals
@@ -182,6 +183,7 @@ architecture structure of RISCV_Processor is
 
 begin
   s_Ovfl <= '0';
+  s_PCreg_Select <= c_Branch and s_ALUZero;
 
   with iInstLd select
     s_IMemAddr <= s_PC when '0',
@@ -229,7 +231,7 @@ begin
     generic map(DATA_WIDTH => N)
     port map(
       i_Imm     => s_Imm,
-      i_Branch  => c_Branch,
+      i_Branch  => s_PCreg_Select,
       i_WrPc    => '1',
       i_Rst     => iRst,
       i_Clk     => iClk,
@@ -342,16 +344,16 @@ begin
   load_lbu_mux : mux2t1_N
     generic map(N => N)
     port map(i_S => s_IsLBU,
-             i_D0 => s_ldMux2, -- output of lh mux goes to this mux as the input for the case when it's not an lbu instruction
+             i_D0 => s_ldMux2,
              i_D1 => s_DMEMLBUExtended,
-             o_O  => s_ldMux3); -- output of this mux goes to another mux that selects between lh and lbu data based on opcode and func3
+             o_O  => s_ldMux3);
     
   load_lhu_mux : mux2t1_N
     generic map(N => N)
     port map(i_S => s_IsLHU,
-             i_D0 => s_ldMux3, -- output of lbu mux goes to this mux as the input for the case when it's not an lhu instruction
+             i_D0 => s_ldMux3,
              i_D1 => s_DMEMLHUExtended,
-             o_O  => s_LoadData); -- final output of the load data mux that accounts for lb, lh, lbu, and lhu instructions
+             o_O  => s_LoadData);
 
 
 end structure;

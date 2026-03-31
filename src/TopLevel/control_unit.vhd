@@ -32,6 +32,7 @@ architecture df of control_unit is
 
         with s_opcode select
             o_Branch <=
+            '1' when "1100011", -- BEQ, BNE, BLT, BGE, BLTU, BGEU
             '0' when others;
         
         with s_opcode select

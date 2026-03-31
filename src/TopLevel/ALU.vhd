@@ -126,12 +126,12 @@ begin
                  i_D8   => s_lh,
                  i_D9   => s_lbu,
                  i_D10  => s_lhu,
-                 i_D11  => (others => '0'),
+                 i_D11  => s_sub, -- for beq
                  i_D12  => (others => '0'),
                  i_D13  => (others => '0'),
                  i_D14  => (others => '0'),
                  i_D15  => (others => '0'),
                  o_O    => o_ALUResult);
-
-    o_Zero <= '1' when o_ALUResult = x"0000" else '0';
+                 
+    o_Zero <= '1' when o_ALUResult = x"00000000" else '0';
 end structural;
