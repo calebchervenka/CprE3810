@@ -59,6 +59,7 @@ architecture Structural of imm_gen is
 
     signal s_mux_1 : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal s_mux_2 : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_mux_3 : std_logic_vector(DATA_WIDTH-1 downto 0);
 
 begin
     -- No Immediate:
@@ -101,7 +102,7 @@ begin
         i_D0 => s_imm_sb,
         i_D1 => s_imm_i,
         i_D2 => s_imm_uj,
-        i_D3 => s_imm_sb,
+        i_D3 => s_mux_3, -- Sometimes sb, sometimes uj
         o_O =>  s_mux_1
     );
 
@@ -110,6 +111,13 @@ begin
         i_D0    => s_imm_i,
         i_D1    => s_imm_u,
         o_O     => s_mux_2
+    );
+
+    mux_imm_3 : Mux2t1_N generic map(32) port map(
+        i_S     => i_instr(3),
+        i_D0    => s_imm_sb,
+        i_D1    => s_imm_uj,
+        o_O     => s_mux_3
     );
 
     mux_imm_type : Mux8t1_N generic map(32) port map(

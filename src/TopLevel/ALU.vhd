@@ -80,6 +80,7 @@ architecture structural of ALU is
     signal s_srl      : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal s_sra      : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal s_eq       : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_neq      : std_logic_vector(DATA_WIDTH-1 downto 0);
 
 
 
@@ -133,6 +134,7 @@ begin
     s_ui(11 downto 0)      <= (others => '0');
 
     s_eq    <= x"00000001" when i_A = i_B else x"00000000";
+    s_neq   <= x"00000000" when i_A = i_B else x"00000001";
 
     -- essentially checking the 4 conditions of binary subtraction
     -- this will tell us if the rs1 < rs2 is a negative which tells is it is less
@@ -164,7 +166,7 @@ begin
                  i_D9   => s_srl, -- Shift right (logical)
                  i_D10  => s_sra, -- Shift right (arithmetic)
                  i_D11  => s_eq,
-                 i_D12  => (others => '0'),
+                 i_D12  => s_neq,
                  i_D13  => (others => '0'),
                  i_D14  => (others => '0'),
                  i_D15  => (others => '0'),

@@ -57,6 +57,7 @@ architecture df of ACU is
         x"9" when opcode = "0010011" and s_func3 = "101" else   -- SRLI
 
         x"B" when opcode = "1100011" and s_func3 = "000" else   -- BEQ
+        x"C" when opcode = "1100011" and s_func3 = "001" else   -- BNE
 
         "0000";
 end df;
