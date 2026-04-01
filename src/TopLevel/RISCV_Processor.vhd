@@ -59,6 +59,7 @@ architecture structure of RISCV_Processor is
   -- Control signals
   signal c_Branch   : std_logic;
   signal c_Branch_Cond : std_logic; -- Branch
+  signal c_Jalr     : std_logic; -- JALR
   signal c_ALUSrcA  : std_logic_vector(1 downto 0);
   signal c_ALUSrcB  : std_logic_vector(1 downto 0);
   signal c_MemToReg : std_logic;
@@ -81,6 +82,11 @@ architecture structure of RISCV_Processor is
 
   signal s_ImmU            : std_logic_vector(N-1 downto 0); -- Upper Immediate
   signal s_PCJ              : std_logic_vector(N-1 downto 0); -- Program Cursor OR bit 22
+
+  -- PC Branch Target Signals
+  signal s_branch_base          : std_logic_vector(N-1 downto 0);
+  signal s_branch_raw_target    : std_logic_vector(N-1 downto 0);
+  signal s_branch_final_target  : std_logic_vector(N-1 downto 0);
 
 
   -- Load Byte Signals
@@ -124,6 +130,7 @@ architecture structure of RISCV_Processor is
       o_MemToReg  : out std_logic;
       o_MemWrite  : out std_logic;
       o_RegWrite  : out std_logic;
+      o_Jalr      : out std_logic;
       o_Halt      : out std_logic
     );
   end component;
@@ -131,8 +138,8 @@ architecture structure of RISCV_Processor is
   component pc_reg is
     generic(DATA_WIDTH : integer);
     port(
-      i_Imm     : in std_logic_vector(DATA_WIDTH-1 downto 0);
-      i_Branch  : in std_logic;
+      i_Target  : in std_logic_vector(DATA_WIDTH-1 downto 0);
+      i_IncOrSet: in std_logic;
       i_WrPc    : in std_logic;
       i_Rst     : in std_logic;
       i_Clk     : in std_logic;
@@ -188,6 +195,17 @@ architecture structure of RISCV_Processor is
          o_O  : out std_logic_vector(N-1 downto 0));
   end component;
 
+  component ripple_adder is
+    generic(N : integer);
+    port(
+        i_A     : in std_logic_vector(N-1 downto 0);
+        i_B     : in std_logic_vector(N-1 downto 0);
+        i_Cin   : in std_logic;
+        o_Sum   : out std_logic_vector(N-1 downto 0);
+        o_Cout  : out std_logic
+    );
+  end component;
+
   component mux4t1_N is
     generic(N : integer);
     port(i_S  : in std_logic_vector(1 downto 0);
@@ -236,6 +254,7 @@ begin
     o_MemToReg  => c_MemToReg,
     o_MemWrite  => s_DMemWr,
     o_RegWrite  => s_RegWr,
+    o_Jalr      => c_Jalr,
     o_Halt      => s_Halt
   );
 
@@ -246,12 +265,32 @@ begin
     o_Imm     => s_Imm
   );
 
+  mux_branch_base : mux2t1_N
+    generic map(N => N)
+    port map(
+      i_S  => c_Jalr,
+      i_D0 => s_PC,
+      i_D1 => s_Reg1Data,
+      o_O  => s_branch_base
+    );
+
+  branch_adder : ripple_adder
+    generic map(N => N)
+    port map(
+      i_A     => s_branch_base,
+      i_B     => s_Imm,
+      i_Cin   => '0',
+      o_Sum   => s_branch_raw_target,
+      o_Cout  => open
+    );
+
+  s_branch_final_target <= s_branch_raw_target(N-1 downto 1) & '0' when c_Jalr = '1' else s_branch_raw_target;
+
   PCReg : pc_reg
     generic map(DATA_WIDTH => N)
     port map(
-      i_Imm     => s_Imm,
-      i_Branch  => s_PCreg_Select,
-      -- i_Branch  => c_Branch,
+      i_Target      => s_branch_final_target,
+      i_IncOrSet    => s_PCreg_Select,
       i_WrPc    => '1',
       i_Rst     => iRst,
       i_Clk     => iClk,

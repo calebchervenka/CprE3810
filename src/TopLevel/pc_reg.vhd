@@ -10,8 +10,8 @@ entity pc_reg is
         DATA_WIDTH  : integer := 32
     );
     port(
-        i_Imm : in std_logic_vector(DATA_WIDTH - 1 downto 0);
-        i_Branch : in std_logic;
+        i_Target : in std_logic_vector(DATA_WIDTH - 1 downto 0);
+        i_IncOrSet : in std_logic;
         i_WrPC : in std_logic;
         i_Rst : in std_logic;
         i_Clk : in std_logic;
@@ -55,7 +55,6 @@ architecture structural of pc_reg is
     signal s_PC         : std_logic_vector(DATA_WIDTH - 1 downto 0);
     signal s_PC_next    : std_logic_vector(DATA_WIDTH - 1 downto 0);
     signal s_PC_plus4   : std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal s_PC_branch  : std_logic_vector(DATA_WIDTH - 1 downto 0);
 
     begin
         reg : reg_N
@@ -76,20 +75,11 @@ architecture structural of pc_reg is
             o_Cout  => open
         );
 
-        branch_add : ripple_adder
+        mux_pc_next : mux2t1_N
         port map(
-            i_A     => s_PC,
-            i_B     => i_Imm,
-            i_Cin   => '0',
-            o_Sum   => s_PC_branch,
-            o_Cout  => open
-        );
-
-        mux_add_branch : mux2t1_N
-        port map(
-            i_S     => i_Branch,
+            i_S     => i_IncOrSet,
             i_D0    => s_PC_plus4,
-            i_D1    => s_PC_branch,
+            i_D1    => i_Target,
             o_O     => s_PC_next
         );
 

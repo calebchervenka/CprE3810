@@ -35,6 +35,7 @@ architecture df of ACU is
         x"0" when opcode = "0000011" and s_func3 = "101" else   -- LHU
         x"0" when opcode = "0100011" and s_func3 = "010" else   -- SW
         x"0" when opcode = "1101111" else                       -- JAL
+        x"0" when opcode = "1100111" else                       -- JALR
         x"0" when opcode = "0010111" else                       -- AUIPC
         x"1" when opcode = "0110011" and s_func3 = "000" and s_func7(5) = '1' else  -- SUB
         x"2" when opcode = "0110011" and s_func3 = "001" else   -- SLL

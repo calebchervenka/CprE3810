@@ -58,6 +58,8 @@ architecture Structural of imm_gen is
     signal s_imm_uj : std_logic_vector(DATA_WIDTH-1 downto 0);
 
     signal s_mux_2 : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_imm_pre_jalr : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_is_jalr : std_logic;
 
 begin
     -- No Immediate:
@@ -104,6 +106,15 @@ begin
         i_D1    => s_imm_u,
         i_D2    => s_imm_sb,
         i_D3    => s_imm_uj,
+        o_O     => s_imm_pre_jalr
+    );
+
+    s_is_jalr <= '1' when i_instr(6 downto 0) = "1100111" else '0';
+    
+    mux_jalr : Mux2t1_N generic map(32) port map(
+        i_S     => s_is_jalr,
+        i_D0    => s_imm_pre_jalr,
+        i_D1    => s_imm_i,
         o_O     => o_imm
     );
 

@@ -18,6 +18,7 @@ entity control_unit is
         o_MemToReg  : out std_logic;
         o_MemWrite  : out std_logic;
         o_RegWrite  : out std_logic;
+        o_Jalr      : out std_logic;
         o_Halt      : out std_logic
     );
 end control_unit;
@@ -36,6 +37,12 @@ architecture df of control_unit is
             o_Branch <=
             -- '1' when "1100011", -- BEQ, BNE, BLT, BGE, BLTU, BGEU
             '1' when "1101111", -- JAL
+            '1' when "1100111", -- JALR
+            '0' when others;
+        
+        with s_opcode select
+            o_Jalr <=
+            '1' when "1100111", -- JALR
             '0' when others;
         
         with s_opcode select
@@ -46,6 +53,7 @@ architecture df of control_unit is
         with s_opcode select
             o_ALUSrcA <=
             "01" when "1101111", -- JAL
+            "01" when "1100111", -- JALR
             "01" when "0010111", -- AUIPC
             "00" when others;
         
@@ -56,6 +64,7 @@ architecture df of control_unit is
             "01" when "0000011", -- LW, LB, LH, LBU, LHU
             "01" when "0110111", -- LUI, SLT
             "10" when "1101111", -- JAL
+            "10" when "1100111", -- JALR
             "01" when "0010111", -- AUIPC, SLTI, SLTIU
             "00" when others;
 
@@ -76,6 +85,7 @@ architecture df of control_unit is
             '1' when "0000011", -- LW, LB, LH, LBU, LHU
             '1' when "0110111", -- LUI, SLT
             '1' when "1101111", -- JAL
+            '1' when "1100111", -- JALR
             '1' when "0010111", -- AUIPC, SLTI, SLTIU
             '0' when others;
         
