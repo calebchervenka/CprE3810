@@ -36,7 +36,7 @@ architecture df of ACU is
         x"0" when opcode = "0100011" and s_func3 = "010" else   -- SW
         x"0" when opcode = "1101111" else                       -- JAL
         x"0" when opcode = "0010111" else                       -- AUIPC
-        x"1" when opcode = "0110011" and s_func3 = "000" and s_func7 = "0100000" else  -- SUB
+        x"1" when opcode = "0110011" and s_func3 = "000" and s_func7(5) = '1' else  -- SUB
         x"1" when opcode = "1100011" and s_func3 = "000" else   -- BEQ
         x"2" when opcode = "0110011" and s_func3 = "001" else   -- SLL
         x"2" when opcode = "0010011" and s_func3 = "001" else   -- SLLI
@@ -50,10 +50,12 @@ architecture df of ACU is
         x"7" when opcode = "0110011" and s_func3 = "010" and s_func7 = "0000000" else -- SLT
         x"7" when opcode = "0010011" and s_func3 = "010" else   -- SLTI
         x"8" when opcode = "0010011" and s_func3 = "011" else   -- SLTIU
+        x"A" when opcode = "0110011" and s_func3 = "101" and s_func7(5) = '1' else   -- SRA
+        x"A" when opcode = "0010011" and s_func3 = "101" and s_func7(5) = '1' else   -- SRAI
+        
+        -- MUST BE CHECKED AFTER SRA/SRAI BECAUSE OF FUNC7 VALUE
         x"9" when opcode = "0110011" and s_func3 = "101" else   -- SRL
         x"9" when opcode = "0010011" and s_func3 = "101" else   -- SRLI
-        x"A" when opcode = "0110011" and s_func3 = "101" else   -- SRA
-        x"A" when opcode = "0010011" and s_func3 = "101" else   -- SRAI
 
         "0000";
 end df;

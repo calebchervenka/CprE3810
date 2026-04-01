@@ -39,9 +39,10 @@ architecture structural of ALU is
     end component;
 
     component barrel_shifter_right is
-        Port (i_D       : in  std_logic_vector(31 downto 0);
-              i_shift   : in  std_logic_vector(4 downto 0);
-              o_Q       : out std_logic_vector(31 downto 0));
+        Port (i_D           : in  std_logic_vector(31 downto 0);
+              i_shift       : in  std_logic_vector(4 downto 0);
+              i_signed      : in  std_logic;
+              o_Q           : out std_logic_vector(31 downto 0));
     end component;
 
     component mux16t1_N is
@@ -107,10 +108,17 @@ begin
                  i_Shift    => i_B(4 downto 0),
                  o_Q        => s_sll);
     
-    shift_right : barrel_shifter_right
+    shift_right_l : barrel_shifter_right
         port map(i_D        => i_A,
                  i_Shift    => i_B(4 downto 0),
+                 i_signed   => '0',
                  o_Q        => s_srl);
+
+    shift_right_a : barrel_shifter_right
+        port map(i_D        => i_A,
+                 i_Shift    => i_B(4 downto 0),
+                 i_signed   => '1',
+                 o_Q        => s_sra);
             
 
     --------------------------------

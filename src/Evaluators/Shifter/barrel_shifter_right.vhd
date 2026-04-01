@@ -6,6 +6,7 @@ entity barrel_shifter_right is
     Port (
         i_D     : in  std_logic_vector(31 downto 0);
         i_shift : in  std_logic_vector(4 downto 0);
+        i_signed : in std_logic;
         o_Q     : out std_logic_vector(31 downto 0)
     );
 end barrel_shifter_right;
@@ -22,7 +23,7 @@ begin
             end generate MUX_VAL;
             
             ZERO_PAD: if (i + s > 31) generate
-                mux_in(i)(s) <= '0';
+                mux_in(i)(s) <= (i_signed and i_D(31));
             end generate ZERO_PAD;
         end generate G_INPUTS;
         
