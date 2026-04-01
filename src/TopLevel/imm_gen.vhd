@@ -57,9 +57,7 @@ architecture Structural of imm_gen is
     signal s_imm_u : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal s_imm_uj : std_logic_vector(DATA_WIDTH-1 downto 0);
 
-    signal s_mux_1 : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal s_mux_2 : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal s_mux_3 : std_logic_vector(DATA_WIDTH-1 downto 0);
 
 begin
     -- No Immediate:
@@ -97,39 +95,22 @@ begin
     s_imm_uj(19 downto 12) <= i_instr(19 downto 12);
     s_imm_uj(31 downto 20) <= (others => i_instr(31)); -- sign-extend the immediate value
 
+    ----------------------------------------
+    -- Immediate type output MUX
+    ----------------------------------------
     mux_imm_1 : Mux4t1_N generic map(32) port map(
-        i_S => i_instr(6 downto 5),
-        i_D0 => s_imm_sb,
-        i_D1 => s_imm_i,
-        i_D2 => s_imm_uj,
-        i_D3 => s_mux_3, -- Sometimes sb, sometimes uj
-        o_O =>  s_mux_1
+        i_S     => i_instr(6) & i_instr(2),
+        i_D0    => s_mux_2,
+        i_D1    => s_imm_u,
+        i_D2    => s_imm_sb,
+        i_D3    => s_imm_uj,
+        o_O     => o_imm
     );
 
     mux_imm_2 : Mux2t1_N generic map(32) port map(
-        i_S     => i_instr(2),
+        i_S     => i_instr(5),
         i_D0    => s_imm_i,
-        i_D1    => s_imm_u,
+        i_D1    => s_imm_s,
         o_O     => s_mux_2
-    );
-
-    mux_imm_3 : Mux2t1_N generic map(32) port map(
-        i_S     => i_instr(3),
-        i_D0    => s_imm_sb,
-        i_D1    => s_imm_uj,
-        o_O     => s_mux_3
-    );
-
-    mux_imm_type : Mux8t1_N generic map(32) port map(
-        i_S => i_instr(6 downto 4),
-        i_D0 => s_imm_i,
-        i_D1 => s_mux_2, -- Sometimes i, sometimes u
-        i_D2 => s_imm_s,
-        i_D3 => s_imm_u,
-        i_D4 => (others => '0'),
-        i_D5 => (others => '0'),
-        i_D6 => s_mux_1,
-        i_D7 => s_imm_i,
-        o_O => o_imm
     );
 end Structural;
