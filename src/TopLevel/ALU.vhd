@@ -22,7 +22,7 @@ architecture structural of ALU is
              i_B    : in std_logic_vector(N-1 downto 0);
              i_Cin  : in std_logic;
              o_Sum  : out std_logic_vector(N-1 downto 0);
-             o_Cout : out std_logic
+             o_Cout : out std_logic 
         );
     end component;
 
@@ -33,6 +33,12 @@ architecture structural of ALU is
     end component;
 
     component barrel_shifter_left is
+        Port (i_D       : in  std_logic_vector(31 downto 0);
+              i_shift   : in  std_logic_vector(4 downto 0);
+              o_Q       : out std_logic_vector(31 downto 0));
+    end component;
+
+    component barrel_shifter_right is
         Port (i_D       : in  std_logic_vector(31 downto 0);
               i_shift   : in  std_logic_vector(4 downto 0);
               o_Q       : out std_logic_vector(31 downto 0));
@@ -60,17 +66,20 @@ architecture structural of ALU is
              o_O    : out std_logic_vector(N-1 downto 0));
     end component;
 
-    signal s_add    : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal s_sub    : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal s_sll    : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal s_and    : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal s_or     : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal s_xor    : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal s_ui    : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal s_lb     : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal s_lh     : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal s_lbu    : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal s_lhu    : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_add      : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_sub      : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_sll      : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_and      : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_or       : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_xor      : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_ui       : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_slt      : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_slt_cout : std_logic; -- slt carry out (important for sltiu)
+    signal s_sltiu    : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_srl      : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_sra      : std_logic_vector(DATA_WIDTH-1 downto 0);
+
+
 
 begin
 
@@ -91,12 +100,17 @@ begin
                  i_B    => not i_B,
                  i_Cin  => '1',
                  o_Sum  => s_sub,
-                 o_Cout => open);
+                 o_Cout => s_slt_cout); -- open -> s_slt_cout
 
     shift_left : barrel_shifter_left
         port map(i_D        => i_A,
                  i_Shift    => i_B(4 downto 0),
                  o_Q        => s_sll);
+    
+    shift_right : barrel_shifter_right
+        port map(i_D        => i_A,
+                 i_Shift    => i_B(4 downto 0),
+                 o_Q        => s_srl);
             
 
     --------------------------------
@@ -109,24 +123,36 @@ begin
     s_ui(31 downto 12)     <= i_B(31 downto 12);
     s_ui(11 downto 0)      <= (others => '0');
 
+    -- essentially checking the 4 conditions of binary subtraction
+    -- this will tell us if the rs1 < rs2 is a negative which tells is it is less
+
+    -- signed logic
+    s_slt <= x"0000000" & "000" & '1' when (i_A(31) = '1' and i_B(31) = '0') else -- - < +
+             x"0000000" & "000" & '0' when (i_A(31) = '0' and i_B(31) = '1') else -- + < -
+             x"0000000" & "000" &  s_sub(31);                                     -- same signs (+ < +, - < -)
+
+    -- unsigned logic using carry outs
+    s_sltiu <= x"0000000" & "000" & (not s_slt_cout); -- A < B, when carryout is 0
+    
+    
     ------------------------------
     --    Output Selection
     ------------------------------
     final_out : mux16t1_N
         generic map(N => DATA_WIDTH)
         port map(i_S    => i_ALUCtrl,
-                 i_D0   => s_add,
-                 i_D1   => s_sub,
-                 i_D2   => s_sll,
+                 i_D0   => s_add, -- ADD, ADDI, LW, LB, LH, LBU, LHU, SW, JAL, AUIPC
+                 i_D1   => s_sub, -- SUB, BEQ
+                 i_D2   => s_sll, -- SLL, SLLI
                  i_D3   => s_and,
                  i_D4   => s_or,
                  i_D5   => s_xor,
                  i_D6   => s_ui,
-                 i_D7   => s_lb,
-                 i_D8   => s_lh,
-                 i_D9   => s_lbu,
-                 i_D10  => s_lhu,
-                 i_D11  => s_sub, -- for beq
+                 i_D7   => s_slt, -- SLT, SLTI
+                 i_D8   => s_sltiu,
+                 i_D9   => s_srl, -- SRL, SRLI
+                 i_D10  => s_sra, -- SRA, SRAI,
+                 i_D11  => (others => '0'),
                  i_D12  => (others => '0'),
                  i_D13  => (others => '0'),
                  i_D14  => (others => '0'),
