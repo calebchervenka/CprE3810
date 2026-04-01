@@ -58,6 +58,11 @@ architecture df of ACU is
 
         x"B" when opcode = "1100011" and s_func3 = "000" else   -- BEQ
         x"C" when opcode = "1100011" and s_func3 = "001" else   -- BNE
+        x"7" when opcode = "1100011" and s_func3 = "100" else   -- BLT
+        x"8" when opcode = "1100011" and s_func3 = "110" else   -- BLTU
+
+        x"D" when opcode = "1100011" and s_func3 = "101" else   -- BGE
+        x"E" when opcode = "1100011" and s_func3 = "111" else   -- BGEU
 
         "0000";
 end df;

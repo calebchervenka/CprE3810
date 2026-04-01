@@ -81,6 +81,8 @@ architecture structural of ALU is
     signal s_sra      : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal s_eq       : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal s_neq      : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_ge       : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_geu      : std_logic_vector(DATA_WIDTH-1 downto 0);
 
 
 
@@ -146,6 +148,10 @@ begin
 
     -- unsigned logic using carry outs
     s_sltiu <= x"0000000" & "000" & (not s_slt_cout); -- A < B, when carryout is 0
+
+    -- greater than or equal
+    s_ge <= x"0000000" & "000" & (not s_slt(0));
+    s_geu <= x"0000000" & "000" & (not s_sltiu(0));
     
     
     ------------------------------
@@ -167,8 +173,8 @@ begin
                  i_D10  => s_sra, -- Shift right (arithmetic)
                  i_D11  => s_eq,
                  i_D12  => s_neq,
-                 i_D13  => (others => '0'),
-                 i_D14  => (others => '0'),
+                 i_D13  => s_ge,
+                 i_D14  => s_geu,
                  i_D15  => (others => '0'),
                  o_O    => o_ALUResult);
                  
