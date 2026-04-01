@@ -101,7 +101,7 @@ begin
         i_D0 => s_imm_sb,
         i_D1 => s_imm_i,
         i_D2 => s_imm_uj,
-        i_D3 => s_imm_uj,
+        i_D3 => s_imm_sb,
         o_O =>  s_mux_1
     );
 

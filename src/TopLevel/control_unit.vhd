@@ -12,6 +12,7 @@ entity control_unit is
     port(
         i_Inst      : in std_logic_vector(DATA_WIDTH-1 downto 0);
         o_Branch    : out std_logic;
+        o_Branch_Cond   : out std_logic;
         o_ALUSrcA   : out std_logic_vector(1 downto 0);
         o_ALUSrcB   : out std_logic_vector(1 downto 0);
         o_MemToReg  : out std_logic;
@@ -33,8 +34,13 @@ architecture df of control_unit is
 
         with s_opcode select
             o_Branch <=
-            '1' when "1100011", -- BEQ, BNE, BLT, BGE, BLTU, BGEU
+            -- '1' when "1100011", -- BEQ, BNE, BLT, BGE, BLTU, BGEU
             '1' when "1101111", -- JAL
+            '0' when others;
+        
+        with s_opcode select
+            o_Branch_Cond <=
+            '1' when "1100011", -- BEQ, BNE, BLT, BGE, BLTU, BGEU
             '0' when others;
 
         with s_opcode select

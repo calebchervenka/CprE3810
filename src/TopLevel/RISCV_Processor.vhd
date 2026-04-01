@@ -58,6 +58,7 @@ architecture structure of RISCV_Processor is
   
   -- Control signals
   signal c_Branch   : std_logic;
+  signal c_Branch_Cond : std_logic; -- Branch
   signal c_ALUSrcA  : std_logic_vector(1 downto 0);
   signal c_ALUSrcB  : std_logic_vector(1 downto 0);
   signal c_MemToReg : std_logic;
@@ -117,6 +118,7 @@ architecture structure of RISCV_Processor is
     port(
       i_Inst      : in std_logic_vector(DATA_WIDTH-1 downto 0);
       o_Branch    : out std_logic;
+      o_Branch_Cond   : out std_logic;
       o_ALUSrcA   : out std_logic_vector(1 downto 0);
       o_ALUSrcB   : out std_logic_vector(1 downto 0);
       o_MemToReg  : out std_logic;
@@ -198,7 +200,7 @@ architecture structure of RISCV_Processor is
 
 begin
   s_Ovfl <= '0';
-  s_PCreg_Select <= c_Branch and s_ALUZero;
+  s_PCreg_Select <= (c_Branch or (c_Branch_Cond and s_ALUResult(0)));
 
   with iInstLd select
     s_IMemAddr <= s_PC when '0',
@@ -228,6 +230,7 @@ begin
   port map(
     i_Inst  => s_Inst,
     o_Branch  => c_Branch,
+    o_Branch_Cond => c_Branch_Cond,
     o_ALUSrcA  => c_ALUSrcA,
     o_ALUSrcB  => c_ALUSrcB,
     o_MemToReg  => c_MemToReg,
@@ -248,6 +251,7 @@ begin
     port map(
       i_Imm     => s_Imm,
       i_Branch  => s_PCreg_Select,
+      -- i_Branch  => c_Branch,
       i_WrPc    => '1',
       i_Rst     => iRst,
       i_Clk     => iClk,

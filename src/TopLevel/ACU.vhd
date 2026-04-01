@@ -37,7 +37,6 @@ architecture df of ACU is
         x"0" when opcode = "1101111" else                       -- JAL
         x"0" when opcode = "0010111" else                       -- AUIPC
         x"1" when opcode = "0110011" and s_func3 = "000" and s_func7(5) = '1' else  -- SUB
-        x"1" when opcode = "1100011" and s_func3 = "000" else   -- BEQ
         x"2" when opcode = "0110011" and s_func3 = "001" else   -- SLL
         x"2" when opcode = "0010011" and s_func3 = "001" else   -- SLLI
         x"3" when opcode = "0010011" and s_func3 = "111" else   -- ANDI
@@ -56,6 +55,8 @@ architecture df of ACU is
         -- MUST BE CHECKED AFTER SRA/SRAI BECAUSE OF FUNC7 VALUE
         x"9" when opcode = "0110011" and s_func3 = "101" else   -- SRL
         x"9" when opcode = "0010011" and s_func3 = "101" else   -- SRLI
+
+        x"B" when opcode = "1100011" and s_func3 = "000" else   -- BEQ
 
         "0000";
 end df;

@@ -79,6 +79,7 @@ architecture structural of ALU is
     signal s_sltiu    : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal s_srl      : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal s_sra      : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal s_eq       : std_logic_vector(DATA_WIDTH-1 downto 0);
 
 
 
@@ -131,6 +132,8 @@ begin
     s_ui(31 downto 12)     <= i_B(31 downto 12);
     s_ui(11 downto 0)      <= (others => '0');
 
+    s_eq    <= x"00000001" when i_A = i_B else x"00000000";
+
     -- essentially checking the 4 conditions of binary subtraction
     -- this will tell us if the rs1 < rs2 is a negative which tells is it is less
 
@@ -150,17 +153,17 @@ begin
         generic map(N => DATA_WIDTH)
         port map(i_S    => i_ALUCtrl,
                  i_D0   => s_add, -- ADD, ADDI, LW, LB, LH, LBU, LHU, SW, JAL, AUIPC
-                 i_D1   => s_sub, -- SUB, BEQ
-                 i_D2   => s_sll, -- SLL, SLLI
+                 i_D1   => s_sub, -- Subtract
+                 i_D2   => s_sll, -- Shift left
                  i_D3   => s_and,
                  i_D4   => s_or,
                  i_D5   => s_xor,
                  i_D6   => s_ui,
                  i_D7   => s_slt, -- SLT, SLTI
                  i_D8   => s_sltiu,
-                 i_D9   => s_srl, -- SRL, SRLI
-                 i_D10  => s_sra, -- SRA, SRAI,
-                 i_D11  => (others => '0'),
+                 i_D9   => s_srl, -- Shift right (logical)
+                 i_D10  => s_sra, -- Shift right (arithmetic)
+                 i_D11  => s_eq,
                  i_D12  => (others => '0'),
                  i_D13  => (others => '0'),
                  i_D14  => (others => '0'),
