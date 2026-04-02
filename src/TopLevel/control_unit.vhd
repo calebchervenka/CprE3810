@@ -11,7 +11,7 @@ entity control_unit is
     );
     port(
         i_Inst      : in std_logic_vector(DATA_WIDTH-1 downto 0);
-        o_Branch    : out std_logic;
+        o_Branch    : out std_logic_vector(1 downto 0);
         o_Branch_Cond   : out std_logic;
         o_ALUSrcA   : out std_logic_vector(1 downto 0);
         o_ALUSrcB   : out std_logic_vector(1 downto 0);
@@ -31,9 +31,8 @@ architecture df of control_unit is
     begin
         s_opcode  <= i_inst(6 downto 0);
 
-        o_Branch <= s_opcode(6) and s_opcode(2);
-        o_Jalr <= s_opcode(6) and s_opcode(2) and not s_opcode(3);
-        o_Branch_Cond <= s_opcode(6) and not s_opcode(2);
+        o_Branch(0) <= s_opcode(6) and s_opcode(2);
+        o_Branch(1) <= (s_opcode(6) and s_opcode(2) and not s_opcode(3)) or (s_opcode(6) and not s_opcode(2));
         o_ALUSrcA <= '0' & s_opcode(2) and (s_opcode(5) xor s_opcode(4));
         o_ALUSrcB(0) <= not s_opcode(6) and (s_opcode(2) or (s_opcode(5) nand s_opcode(4)));
         o_ALUSrcB(1) <= s_opcode(6) and s_opcode(2);

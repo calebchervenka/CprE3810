@@ -57,7 +57,7 @@ architecture structure of RISCV_Processor is
   signal s_Ovfl         : std_logic;  -- this signal indicates an overflow exception would have been initiated
   
   -- Control signals
-  signal c_Branch   : std_logic;
+  signal c_Branch   : std_logic_vector(1 downto 0);
   signal c_Branch_Cond : std_logic; -- Branch
   signal c_Jalr     : std_logic; -- JALR
   signal c_ALUSrcA  : std_logic_vector(1 downto 0);
@@ -103,7 +103,7 @@ architecture structure of RISCV_Processor is
     generic(DATA_WIDTH : integer);
     port(
       i_Inst      : in std_logic_vector(DATA_WIDTH-1 downto 0);
-      o_Branch    : out std_logic;
+      o_Branch    : out std_logic_vector(1 downto 0);
       o_Branch_Cond   : out std_logic;
       o_ALUSrcA   : out std_logic_vector(1 downto 0);
       o_ALUSrcB   : out std_logic_vector(1 downto 0);
@@ -118,9 +118,10 @@ architecture structure of RISCV_Processor is
   component pc_reg is
     generic(DATA_WIDTH : integer);
     port(
-      i_Target  : in std_logic_vector(DATA_WIDTH-1 downto 0);
-      i_IncOrSet: in std_logic;
-      i_WrPc    : in std_logic;
+      i_Branch : in std_logic_vector(1 downto 0);
+      i_BranchCondition : in std_logic;
+      i_Imm  : in std_logic_vector(DATA_WIDTH-1 downto 0);
+      i_Reg1Data  : in std_logic_vector(DATA_WIDTH-1 downto 0);
       i_Rst     : in std_logic;
       i_Clk     : in std_logic;
       o_PC      : out std_logic_vector(DATA_WIDTH-1 downto 0));
@@ -208,7 +209,6 @@ architecture structure of RISCV_Processor is
 
 begin
   s_Ovfl <= '0';
-  s_PCreg_Select <= (c_Branch or (c_Branch_Cond and s_ALUResult(0)));
 
   with iInstLd select
     s_IMemAddr <= s_PC when '0',
@@ -279,9 +279,10 @@ begin
   PCReg : pc_reg
     generic map(DATA_WIDTH => N)
     port map(
-      i_Target      => s_branch_final_target,
-      i_IncOrSet    => s_PCreg_Select,
-      i_WrPc    => '1',
+      i_Branch    => c_Branch,
+      i_BranchCondition => s_ALUResult(0),
+      i_Imm       => s_Imm,
+      i_Reg1Data  => s_Reg1Data,
       i_Rst     => iRst,
       i_Clk     => iClk,
       o_PC      => s_PC);
