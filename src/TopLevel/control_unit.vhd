@@ -30,68 +30,81 @@ architecture df of control_unit is
 
     begin
         s_opcode  <= i_inst(6 downto 0);
-        s_func3   <= i_inst(14 downto 12);
-        s_func7   <= i_inst(31 downto 25);
 
-        with s_opcode select
-            o_Branch <=
-            -- '1' when "1100011", -- BEQ, BNE, BLT, BGE, BLTU, BGEU
-            '1' when "1100111", -- JALR
-            '1' when "1101111", -- JAL
-            '0' when others;
+        o_Branch <= s_opcode(6) and s_opcode(2);
+        o_Jalr <= s_opcode(6) and s_opcode(2) and not s_opcode(3);
+        o_Branch_Cond <= s_opcode(6) and not s_opcode(2);
+        o_ALUSrcA <= '0' & s_opcode(2) and (s_opcode(5) xor s_opcode(4));
+        o_ALUSrcB(0) <= not s_opcode(6) and (s_opcode(2) or (s_opcode(5) nand s_opcode(4)));
+        o_ALUSrcB(1) <= s_opcode(6) and s_opcode(2);
+        o_MemToReg <= s_opcode(4) nor s_opcode(5);
+        o_MemWrite <= not (s_opcode(6) or s_opcode(4)) and s_opcode(5);
+        o_RegWrite <= 
+            not (s_opcode(6) or s_opcode(5)) 
+            or (not s_opcode(6) and s_opcode(4)) 
+            or (s_opcode(6) and s_opcode(3));
         
-        with s_opcode select
-            o_Jalr <=
-            '1' when "1100111", -- JALR
-            '0' when others;
+        o_Halt <= s_opcode(6) and s_opcode(4);
+
+        -- with s_opcode select
+        --     o_Branch <=
+        --     -- '1' when "1100011", -- BEQ, BNE, BLT, BGE, BLTU, BGEU
+        --     '1' when "1100111", -- JALR
+        --     '1' when "1101111", -- JAL
+        --     '0' when others;
+
+        -- with s_opcode select
+        --     o_Jalr <=
+        --     '1' when "1100111", -- JALR
+        --     '0' when others;
+
+        -- with s_opcode select
+        --     o_Branch_Cond <=
+        --     '1' when "1100011", -- BEQ, BNE, BLT, BGE, BLTU, BGEU
+        --     '0' when others;
         
-        with s_opcode select
-            o_Branch_Cond <=
-            '1' when "1100011", -- BEQ, BNE, BLT, BGE, BLTU, BGEU
-            '0' when others;
+        -- with s_opcode select
+        --     o_ALUSrcA <=
+        --     "01" when "0010111", -- AUIPC
+        --     "01" when "1100111", -- JALR
+        --     "01" when "1101111", -- JAL
+        --     "00" when others;
 
-        with s_opcode select
-            o_ALUSrcA <=
-            "01" when "0010111", -- AUIPC
-            "01" when "1100111", -- JALR
-            "01" when "1101111", -- JAL
-            "00" when others;
-        
-        with s_opcode select
-            o_ALUSrcB <=
-            "01" when "0000011", -- LW, LB, LH, LBU, LHU
-            "01" when "0010011", -- ADDI, ANDI, ORI, XORI
-            "01" when "0010111", -- AUIPC, SLTI, SLTIU
-            "01" when "0100011", -- SW
-            "01" when "0110111", -- LUI, SLT
-            "10" when "1100111", -- JALR
-            "10" when "1101111", -- JAL
-            "00" when others;
+        -- with s_opcode select
+        --     o_ALUSrcB <=
+        --     "01" when "0000011", -- LW, LB, LH, LBU, LHU
+        --     "01" when "0010011", -- ADDI, ANDI, ORI, XORI
+        --     "01" when "0010111", -- AUIPC, SLTI, SLTIU
+        --     "01" when "0100011", -- SW
+        --     "01" when "0110111", -- LUI, SLT
+        --     "10" when "1100111", -- JALR
+        --     "10" when "1101111", -- JAL
+        --     "00" when others;
 
-        with s_opcode select
-            o_MemToReg <=
-            '1' when "0000011", -- LW, LB, LH, LBU, LHU
-            '0' when others;
+        -- with s_opcode select
+        --     o_MemToReg <=
+        --     '1' when "0000011", -- LW, LB, LH, LBU, LHU
+        --     '0' when others;
 
-        with s_opcode select
-            o_MemWrite <=
-            '1' when "0100011", -- SW
-            '0' when others;
+        -- with s_opcode select
+        --     o_MemWrite <=
+        --     '1' when "0100011", -- SW
+        --     '0' when others;
 
-        with s_opcode select
-            o_RegWrite <=
-            '1' when "0000011", -- LW, LB, LH, LBU, LHU
-            '1' when "0010011", -- ADDI, ANDI, ORI, XORI
-            '1' when "0010111", -- AUIPC, SLTI, SLTIU
-            '1' when "0110011", -- ADD, AND, OR, XOR, SLL, SLLI, SRL, SRLI, SRA, SRAI
-            '1' when "0110111", -- LUI, SLT
-            '1' when "1100111", -- JALR
-            '1' when "1101111", -- JAL
-            '0' when others;
-        
-        with s_opcode select
-            o_Halt <=
-            '1' when "1110011",
-            '0' when others;
+        -- with s_opcode select
+        --     o_RegWrite <=
+        --     '1' when "0000011", -- LW, LB, LH, LBU, LHU
+        --     '1' when "0010011", -- ADDI, ANDI, ORI, XORI
+        --     '1' when "0010111", -- AUIPC, SLTI, SLTIU
+        --     '1' when "0110011", -- ADD, AND, OR, XOR, SLL, SLLI, SRL, SRLI, SRA, SRAI
+        --     '1' when "0110111", -- LUI, SLT
+        --     '1' when "1100111", -- JALR
+        --     '1' when "1101111", -- JAL
+        --     '0' when others;
+        -- not (6 or (5 and not 4)) or (6 and 3)
 
+        -- with s_opcode select
+        --     o_Halt <=
+        --     '1' when "1110011",
+        --     '0' when others;
 end df;
