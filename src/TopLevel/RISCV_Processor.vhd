@@ -63,27 +63,20 @@ architecture structure of RISCV_Processor is
   signal c_ALUSrcA  : std_logic_vector(1 downto 0);
   signal c_ALUSrcB  : std_logic_vector(1 downto 0);
   signal c_MemToReg : std_logic;
+  signal c_ALUCtrl         : std_logic_vector(ALU_CTRL_WIDTH-1 downto 0);
 
 
   -- Data signals
   signal s_Imm             : std_logic_vector(N-1 downto 0);
+  signal s_ImmU            : std_logic_vector(N-1 downto 0); -- Upper Immediate
   signal s_Reg1Data        : std_logic_vector(N-1 downto 0);
   signal s_Reg2Data        : std_logic_vector(N-1 downto 0);
   signal s_ALU_A           : std_logic_vector(N-1 downto 0);
   signal s_ALU_B           : std_logic_vector(N-1 downto 0);
-  signal s_ALUCtrl         : std_logic_vector(ALU_CTRL_WIDTH-1 downto 0);
   signal s_ALUResult       : std_logic_vector(N-1 downto 0);
   signal s_ALUZero         : std_logic;
+  signal s_PCJ              : std_logic_vector(N-1 downto 0); -- Program Cursor with bit 22 set
   signal s_LoadData        : std_logic_vector(N-1 downto 0); -- output of load data mux that accounts for lb and lh instructions
-  signal s_PCreg_Select    : std_logic; -- select for beq
-
-  signal s_ImmU            : std_logic_vector(N-1 downto 0); -- Upper Immediate
-  signal s_PCJ              : std_logic_vector(N-1 downto 0); -- Program Cursor OR bit 22
-
-  -- PC Branch Target Signals
-  signal s_branch_base          : std_logic_vector(N-1 downto 0);
-  signal s_branch_raw_target    : std_logic_vector(N-1 downto 0);
-  signal s_branch_final_target  : std_logic_vector(N-1 downto 0);
 
   ------------------------------
   --    Components
@@ -255,27 +248,6 @@ begin
     o_Imm     => s_Imm
   );
 
-  mux_branch_base : mux2t1_N
-    generic map(N => N)
-    port map(
-      i_S  => c_Jalr,
-      i_D0 => s_PC,
-      i_D1 => s_Reg1Data,
-      o_O  => s_branch_base
-    );
-
-  branch_adder : ripple_adder
-    generic map(N => N)
-    port map(
-      i_A     => s_branch_base,
-      i_B     => s_Imm,
-      i_Cin   => '0',
-      o_Sum   => s_branch_raw_target,
-      o_Cout  => open
-    );
-
-  s_branch_final_target <= s_branch_raw_target(N-1 downto 1) & '0' when c_Jalr = '1' else s_branch_raw_target;
-
   PCReg : pc_reg
     generic map(DATA_WIDTH => N)
     port map(
@@ -340,13 +312,13 @@ begin
   alu_control : acu
     generic map(DATA_WIDTH => N)
     port map(i_Inst     => s_Inst,
-             o_ALUCtrl  => s_ALUCtrl);
+             o_ALUCtrl  => c_ALUCtrl);
 
   alu_inst : alu
     generic map(DATA_WIDTH => N)
     port map(i_A      => s_ALU_A,
              i_B      => s_ALU_B,
-             i_ALUCtrl  => s_ALUCtrl,
+             i_ALUCtrl  => c_ALUCtrl,
              o_ALUResult  => s_ALUResult,
              o_Zero    => s_ALUZero);
   oALUOut <= s_ALUResult;
