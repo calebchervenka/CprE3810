@@ -53,18 +53,6 @@ architecture structural of pc_reg is
         );
     end component;
 
-    component mux4t1_N is
-        generic(N : integer := DATA_WIDTH);
-        port(
-            i_S     : in std_logic_vector(1 downto 0);
-            i_D0    : in std_logic_vector(N-1 downto 0);
-            i_D1    : in std_logic_vector(N-1 downto 0);
-            i_D2    : in std_logic_vector(N-1 downto 0);
-            i_D3    : in std_logic_vector(N-1 downto 0);
-            o_O     : out std_logic_vector(N-1 downto 0)
-        );
-    end component;
-
     signal s_PC         : std_logic_vector(DATA_WIDTH - 1 downto 0);
     signal s_PC_next    : std_logic_vector(DATA_WIDTH - 1 downto 0);
     signal s_PC_reg     : std_logic_vector(DATA_WIDTH - 1 downto 0);
