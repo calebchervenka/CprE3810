@@ -79,14 +79,12 @@ begin
             o_O => DMemSelectedByte
         );
     
-    mux_halfword : mux4t1_N
+    mux_halfword : mux2t1_N
         generic map(N => 16)
         port map(
-            i_S => i_ALUResult(1 downto 0),
+            i_S => i_ALUResult(1),
             i_D0 => i_MemData(15 downto 0),
-            i_D1 => (others => '0'),
-            i_D2 => i_MemData(31 downto 16),
-            i_D3 => (others => '0'),
+            i_D1 => i_MemData(31 downto 16),
             o_O => DMemSelectedHalfWord
         );
 
