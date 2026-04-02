@@ -47,20 +47,20 @@ architecture df of ACU is
         x"5" when opcode = "0010011" and s_func3 = "100" else   -- XORI
         x"5" when opcode = "0110011" and s_func3 = "100" else   -- XOR
         x"6" when opcode = "0110111" else                       -- LUI
-        x"7" when opcode = "0110011" and s_func3 = "010" and s_func7 = "0000000" else -- SLT
-        x"7" when opcode = "0010011" and s_func3 = "010" else   -- SLTI
-        x"8" when opcode = "0010011" and s_func3 = "011" else   -- SLTIU
-        x"A" when opcode = "0110011" and s_func3 = "101" and s_func7(5) = '1' else   -- SRA
-        x"A" when opcode = "0010011" and s_func3 = "101" and s_func7(5) = '1' else   -- SRAI
+        x"9" when opcode = "0110011" and s_func3 = "010" and s_func7 = "0000000" else -- SLT
+        x"9" when opcode = "0010011" and s_func3 = "010" else   -- SLTI
+        x"A" when opcode = "0010011" and s_func3 = "011" else   -- SLTIU
+        x"8" when opcode = "0110011" and s_func3 = "101" and s_func7(5) = '1' else   -- SRA
+        x"8" when opcode = "0010011" and s_func3 = "101" and s_func7(5) = '1' else   -- SRAI
         
         -- MUST BE CHECKED AFTER SRA/SRAI BECAUSE OF FUNC7 VALUE
-        x"9" when opcode = "0110011" and s_func3 = "101" else   -- SRL
-        x"9" when opcode = "0010011" and s_func3 = "101" else   -- SRLI
+        x"7" when opcode = "0110011" and s_func3 = "101" else   -- SRL
+        x"7" when opcode = "0010011" and s_func3 = "101" else   -- SRLI
 
         x"B" when opcode = "1100011" and s_func3 = "000" else   -- BEQ
         x"C" when opcode = "1100011" and s_func3 = "001" else   -- BNE
-        x"7" when opcode = "1100011" and s_func3 = "100" else   -- BLT
-        x"8" when opcode = "1100011" and s_func3 = "110" else   -- BLTU
+        x"9" when opcode = "1100011" and s_func3 = "100" else   -- BLT
+        x"A" when opcode = "1100011" and s_func3 = "110" else   -- BLTU
 
         x"D" when opcode = "1100011" and s_func3 = "101" else   -- BGE
         x"E" when opcode = "1100011" and s_func3 = "111" else   -- BGEU

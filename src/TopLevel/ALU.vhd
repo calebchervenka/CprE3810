@@ -167,10 +167,10 @@ begin
                  i_D4   => s_or,
                  i_D5   => s_xor,
                  i_D6   => s_ui,
-                 i_D7   => s_slt, -- SLT, SLTI
-                 i_D8   => s_sltiu,
-                 i_D9   => s_srl, -- Shift right (logical)
-                 i_D10  => s_sra, -- Shift right (arithmetic)
+                 i_D7   => s_srl, -- Shift right (logical)
+                 i_D8   => s_sra, -- Shift right (arithmetic)
+                 i_D9   => s_slt, -- SLT, SLTI
+                 i_D10  => s_sltiu,
                  i_D11  => s_eq,
                  i_D12  => s_neq,
                  i_D13  => s_ge,
