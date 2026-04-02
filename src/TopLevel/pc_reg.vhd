@@ -67,12 +67,8 @@ architecture structural of pc_reg is
 
     signal s_PC         : std_logic_vector(DATA_WIDTH - 1 downto 0);
     signal s_PC_next    : std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal s_PC_plus4   : std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal s_PC_plusImm : std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal s_PC_cond    : std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal s_Reg_plusImm    : std_logic_vector(DATA_WIDTH - 1 downto 0);
-
-    signal s_incr       : std_logic_vector(DATA_WIDTH - 1 downto 0);
+    signal s_PC_reg     : std_logic_vector(DATA_WIDTH - 1 downto 0);
+    signal s_4_Imm      : std_logic_vector(DATA_WIDTH - 1 downto 0);
 
     begin
         reg : reg_N
@@ -84,49 +80,29 @@ architecture structural of pc_reg is
             o_Q     => s_PC
         );
 
-        adder_pc_4 : ripple_adder
+        mux_pc_reg : mux2t1_N
         port map(
-            i_A     => s_PC,
-            i_B     => x"00000004",
+            i_S     => i_Branch(1) and i_Branch(0),
+            i_D0    => s_PC,
+            i_D1    => i_Reg1Data,
+            o_O     => s_PC_reg
+        );
+
+        mux_4_Imm : mux2t1_N
+        port map(
+            i_S     => i_Branch(0) or (i_Branch(1) and (not i_Branch(0)) and i_BranchCondition),
+            i_D0    => x"00000004",
+            i_D1    => i_Imm,
+            o_O     => s_4_Imm
+        );
+
+        adder_pc : ripple_adder
+        port map(
+            i_A     => s_PC_reg,
+            i_B     => s_4_Imm,
             i_Cin   => '0',
-            o_Sum   => s_PC_plus4,
+            o_Sum   => s_PC_next,
             o_Cout  => open
-        );
-
-        adder_pc_imm : ripple_adder
-        port map(
-            i_A     => s_PC,
-            i_B     => i_Imm,
-            i_Cin   => '0',
-            o_Sum   => s_PC_plusImm,
-            o_Cout  => open
-        );
-
-        mux_pc_cond : mux2t1_N
-        port map(
-            i_S     => i_BranchCondition,
-            i_D0    => s_PC_plus4,
-            i_D1    => s_PC_plusImm,
-            o_O     => s_PC_cond
-        );
-
-        adder_reg_imm : ripple_adder
-        port map(
-            i_A     => i_Reg1Data,
-            i_B     => i_Imm,
-            i_Cin   => '0',
-            o_Sum   => s_reg_plusImm,
-            o_Cout  => open
-        );
-
-        mux_pc_next : mux4t1_N
-        port map(
-            i_S     => i_Branch,
-            i_D0    => s_PC_plus4,
-            i_D1    => s_PC_plusImm,
-            i_D2    => s_PC_cond,
-            i_D3    => s_reg_plusImm,
-            o_O     => s_PC_next
         );
 
         o_PC <= s_PC;
