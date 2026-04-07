@@ -33,7 +33,8 @@ architecture df of control_unit is
 
         o_Branch(0) <= s_opcode(6) and s_opcode(2);
         o_Branch(1) <= (s_opcode(6) and s_opcode(2) and not s_opcode(3)) or (s_opcode(6) and not s_opcode(2));
-        o_ALUSrcA <= '0' & s_opcode(2) and (s_opcode(5) xor s_opcode(4));
+        o_ALUSrcA(0) <= s_opcode(2) and (s_opcode(5) xor s_opcode(4));
+        o_ALUSrcA(1) <= '0';
         o_ALUSrcB(0) <= not s_opcode(6) and (s_opcode(2) or (s_opcode(5) nand s_opcode(4)));
         o_ALUSrcB(1) <= s_opcode(6) and s_opcode(2);
         o_MemToReg <= s_opcode(4) nor s_opcode(5);
@@ -41,8 +42,7 @@ architecture df of control_unit is
         o_RegWrite <= 
             not (s_opcode(6) or s_opcode(5)) 
             or (not s_opcode(6) and s_opcode(4)) 
-            or (s_opcode(6) and s_opcode(3));
-        
+            or (s_opcode(6) and s_opcode(2));
         o_Halt <= s_opcode(6) and s_opcode(4);
 
         -- with s_opcode select
@@ -100,7 +100,7 @@ architecture df of control_unit is
         --     '1' when "1100111", -- JALR
         --     '1' when "1101111", -- JAL
         --     '0' when others;
-        -- not (6 or (5 and not 4)) or (6 and 3)
+        -- not (6 or (5 and not 4)) or (6 and 2)
 
         -- with s_opcode select
         --     o_Halt <=
