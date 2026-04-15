@@ -55,6 +55,25 @@ architecture structure of RISCV_Processor is
 
   signal s_Halt         : std_logic;
   signal s_Ovfl         : std_logic;  -- this signal indicates an overflow exception would have been initiated
+
+
+  -- Instruction Fetch
+  signal s_PC_IF        : std_logic_vector(N-1 downto 0);
+  signal s_Inst_IF      : std_logic_vector(N-1 downto 0);
+
+  -- Instruction Decode
+  signal s_PC_ID        : std_logic_vector(N-1 downto 0);
+  signal s_Inst_ID      : std_logic_vector(N-1 downto 0);
+
+  -- Execute
+  signal s_Inst_EX      : std_logic_vector(N-1 downto 0);
+
+  -- Memory
+  signal s_Inst_MEM     : std_logic_vector(N-1 downto 0);
+
+  -- Writeback
+  signal s_Inst_WB      : std_logic_vector(N-1 downto 0);
+
   
   -- Control signals
   signal c_Branch   : std_logic_vector(1 downto 0);
@@ -75,7 +94,7 @@ architecture structure of RISCV_Processor is
   signal s_ALU_B           : std_logic_vector(N-1 downto 0);
   signal s_ALUResult       : std_logic_vector(N-1 downto 0);
   signal s_ALUZero         : std_logic;
-  signal s_PCJ              : std_logic_vector(N-1 downto 0); -- Program Cursor with bit 22 set
+  -- signal s_PCJ              : std_logic_vector(N-1 downto 0); -- Program Cursor with bit 22 set
   signal s_LoadData        : std_logic_vector(N-1 downto 0); -- output of load data mux that accounts for lb and lh instructions
 
   ------------------------------
@@ -161,6 +180,17 @@ architecture structure of RISCV_Processor is
          o_Zero       : out std_logic);
   end component;
 
+  component reg_IF_ID is
+    generic(N : integer);
+    port(i_CLK        : in std_logic;
+         i_Rst        : in std_logic;
+         i_LD         : in std_logic;
+         i_PC         : in std_logic_vector(N-1 downto 0);
+         i_Inst       : in std_logic_vector(N-1 downto 0);
+         o_PC         : out std_logic_vector(N-1 downto 0);
+         o_Inst       : out std_logic_vector(N-1 downto 0));
+  end component;
+
   component mem_ext is
     generic(DATA_WIDTH : integer);
     port(
@@ -208,7 +238,22 @@ begin
       iInstAddr when others;
 
 
-  IMem: mem
+  -------------------------------
+  --  Instruction Fetch
+  -------------------------------
+
+  PCReg : pc_reg
+    generic map(DATA_WIDTH => N)
+    port map(
+      i_Branch    => c_Branch,
+      i_BranchCondition => s_ALUResult(0),
+      i_Imm       => s_Imm,
+      i_Reg1Data  => s_Reg1Data,
+      i_Rst     => iRst,
+      i_Clk     => iClk,
+      o_PC      => s_PC);
+
+  IMem : mem
     generic map(ADDR_WIDTH => ADDR_WIDTH,
                 DATA_WIDTH => N)
     port map(clk  => iCLK,
@@ -217,14 +262,24 @@ begin
              we   => iInstLd,
              q    => s_Inst);
   
-  DMem: mem
-    generic map(ADDR_WIDTH => ADDR_WIDTH,
-                DATA_WIDTH => N)
-    port map(clk  => iCLK,
-             addr => s_DMemAddr(11 downto 2),
-             data => s_DMemData,
-             we   => s_DMemWr,
-             q    => s_DMemOut);
+  -- IF_ID : reg_IF_ID
+  --   generic map(
+  --     N   => N
+  --   )
+  --   port map(
+  --     i_Clk   => iClk,
+  --     i_Rst   => iRst,
+  --     i_Ld    => '1',
+  --     i_PC    => s_PC_IF,
+  --     i_Inst  => s_Inst_IF,
+  --     o_PC    => s_PC_ID,
+  --     o_Inst  => s_Inst_ID
+  --   );
+  
+
+  -------------------------------
+  --  Instruction Decode
+  -------------------------------
 
   controls : control_unit
   generic map(DATA_WIDTH => N)
@@ -241,34 +296,20 @@ begin
     o_Halt      => s_Halt
   );
 
-  immediate_generator : imm_gen
-  generic map(DATA_WIDTH => N)
-  port map(
-    i_Instr   => s_Inst,
-    o_Imm     => s_Imm
-  );
+  alu_control : acu
+    generic map(DATA_WIDTH => N)
+    port map(i_Inst     => s_Inst,
+             o_ALUCtrl  => c_ALUCtrl);
 
-  PCReg : pc_reg
+  immediate_generator : imm_gen
     generic map(DATA_WIDTH => N)
     port map(
-      i_Branch    => c_Branch,
-      i_BranchCondition => s_ALUResult(0),
-      i_Imm       => s_Imm,
-      i_Reg1Data  => s_Reg1Data,
-      i_Rst     => iRst,
-      i_Clk     => iClk,
-      o_PC      => s_PC);
+      i_Instr   => s_Inst,
+      o_Imm     => s_Imm
+    );
 
-  reg_data_mux : mux2t1_N
-    generic map(N => N)
-    port map(i_S  => c_MemToReg,
-             i_D0 => s_ALUResult,
-             i_D1 => s_LoadData, -- changed s_DMEMOut to s_LoadData to account for lb, lh, lbu, lhu instructions
-             o_O  => s_RegWrData);
-
-  s_DMemAddr <= s_ALUResult;
-  
-  s_RegWrAddr <= s_Inst(11 downto 7);
+  s_ImmU(31 downto 12) <= s_Imm(19 downto 0);
+  s_ImmU(11 downto 0) <= (others => '0');
 
   register_file : reg_file
     generic map(address_width => REG_ADDR_WIDTH,
@@ -286,19 +327,21 @@ begin
         i_WE    => s_RegWr);
   s_DMemData  <= s_Reg2Data;
 
-  s_PCJ <= (s_PC or x"00400000");
+
+  -------------------------------
+  --  EXECUTE
+  -------------------------------
+
+  -- s_PCJ <= (s_PC or x"00400000");
 
   mux_alu_a : mux4t1_N
     generic map(N => N)
     port map(i_S  => c_ALUSrcA,
              i_D0 => s_Reg1Data,
-             i_D1 => s_PCJ,
+             i_D1 => (s_PC or x"00400000"),
              i_D2 => x"00000000",
              i_D3 => x"00000000",
              o_O  => s_ALU_A);
-  
-  s_ImmU(31 downto 12) <= s_Imm(19 downto 0);
-  s_ImmU(11 downto 0) <= (others => '0');
 
   mux_alu_b : mux4t1_N
     generic map(N => N)
@@ -309,11 +352,6 @@ begin
              i_D3 => s_ImmU,
              o_O  => s_ALU_B);
 
-  alu_control : acu
-    generic map(DATA_WIDTH => N)
-    port map(i_Inst     => s_Inst,
-             o_ALUCtrl  => c_ALUCtrl);
-
   alu_inst : alu
     generic map(DATA_WIDTH => N)
     port map(i_A      => s_ALU_A,
@@ -323,6 +361,22 @@ begin
              o_Zero    => s_ALUZero);
   oALUOut <= s_ALUResult;
 
+
+  -------------------------------
+  --  MEMORY
+  -------------------------------
+
+  s_DMemAddr <= s_ALUResult;
+
+  DMem : mem
+    generic map(ADDR_WIDTH => ADDR_WIDTH,
+                DATA_WIDTH => N)
+    port map(clk  => iCLK,
+             addr => s_DMemAddr(11 downto 2),
+             data => s_DMemData,
+             we   => s_DMemWr,
+             q    => s_DMemOut);
+
   mem_ext_inst : mem_ext
     generic map(DATA_WIDTH => N)
     port map(
@@ -331,6 +385,20 @@ begin
       i_ALUResult => s_ALUResult,
       o_ExtData  => s_LoadData
     );
+
+
+  -------------------------------
+  --  WRITEBACK
+  -------------------------------
+
+  reg_data_mux : mux2t1_N
+    generic map(N => N)
+    port map(i_S  => c_MemToReg,
+             i_D0 => s_ALUResult,
+             i_D1 => s_LoadData, -- changed s_DMEMOut to s_LoadData to account for lb, lh, lbu, lhu instructions
+             o_O  => s_RegWrData);
+  
+  s_RegWrAddr <= s_Inst(11 downto 7);
 
 end structure;
 
