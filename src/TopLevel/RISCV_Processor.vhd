@@ -261,20 +261,16 @@ begin
              data => iInstExt,
              we   => iInstLd,
              q    => s_Inst);
-  
-  -- IF_ID : reg_IF_ID
-  --   generic map(
-  --     N   => N
-  --   )
-  --   port map(
-  --     i_Clk   => iClk,
-  --     i_Rst   => iRst,
-  --     i_Ld    => '1',
-  --     i_PC    => s_PC_IF,
-  --     i_Inst  => s_Inst_IF,
-  --     o_PC    => s_PC_ID,
-  --     o_Inst  => s_Inst_ID
-  --   );
+
+  -- IF/ID
+  --    Instruction:
+  --        - Hazard Detection Unit
+  --        - Register RS0
+  --        - Register RS1
+  --        - ImmGen
+  --        - ID/EX Instruction
+  --    Program Cursor:
+  --        - Adder (Imm + PC)
   
 
   -------------------------------
@@ -327,6 +323,21 @@ begin
         i_WE    => s_RegWr);
   s_DMemData  <= s_Reg2Data;
 
+  -- ID/EX
+  --    Immediate: (Unused)
+  --        - 
+  --    RS0_Addr:
+  --        - Forwarding Unit
+  --    RS1_Addr:
+  --        - Forwarding Unit
+  --    RS0 Data:
+  --        - ALU
+  --    RS1 Data:
+  --        - ALU
+  --    Instruction:
+  --        - Hazard Detection Unit
+  --        - MEM/WB Instruction
+
 
   -------------------------------
   --  EXECUTE
@@ -361,6 +372,14 @@ begin
              o_Zero    => s_ALUZero);
   oALUOut <= s_ALUResult;
 
+  -- EX/MEM
+  --    ALU Result:
+  --        - Data Memory
+  --        - ALU MUXs in Execution stage
+  --        - MEM/WB ALU Result
+  --    ALU B input:
+  --        - Data Memory
+
 
   -------------------------------
   --  MEMORY
@@ -385,6 +404,12 @@ begin
       i_ALUResult => s_ALUResult,
       o_ExtData  => s_LoadData
     );
+
+  -- MEM/WB
+  --    Data Memory Output:
+  --        - MUX between ALU Result and Data Memory going into ALU and Register File
+  --    ALU Result:
+  --        - MUX between ALU Result and Data Memory going into ALU and Register File
 
 
   -------------------------------

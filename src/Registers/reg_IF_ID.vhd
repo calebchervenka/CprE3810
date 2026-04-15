@@ -17,13 +17,6 @@ entity reg_IF_ID is
 end reg_IF_ID;
 
 architecture structure of reg_IF_ID is
-    
-    ---------------------------
-    --      Signals
-    ---------------------------
-
-
-    
     ---------------------------
     --      Components
     ---------------------------
@@ -60,7 +53,7 @@ begin
         i_Rst   => i_Rst,
         i_WE    => '1',
         i_D     => i_Inst,
-        o_Q     => o_PC
+        o_Q     => o_Inst
     );
 
 end structure;
