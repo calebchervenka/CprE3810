@@ -6,13 +6,13 @@ use work.RISCV_types.all;
 
 entity reg_IF_ID is
     generic (N : integer := DATA_WIDTH);
-    port(i_CLK      : in std_logic;
-         i_RST      : in std_logic;
-         i_LD       : in std_logic;
-         i_PC       : in std_logic_vector(N-1 downto 0);
-         i_Inst     : in std_logic_vector(N-1 downto 0);
-         o_PC       : out std_logic_vector(N-1 downto 0);
-         o_Inst     : out std_logic_vector(N-1 downto 0)
+    port(i_CLK      : in std_logic; -- clock
+         i_RST      : in std_logic; -- reset 
+         i_LD       : in std_logic; -- load
+         i_PC       : in std_logic_vector(N-1 downto 0); -- PC input
+         i_Inst     : in std_logic_vector(N-1 downto 0); -- instruction memory input
+         o_PC       : out std_logic_vector(N-1 downto 0); -- output for PC
+         o_Inst     : out std_logic_vector(N-1 downto 0) -- output for instruction memory
          );
 end reg_IF_ID;
 
