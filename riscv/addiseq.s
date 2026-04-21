@@ -17,4 +17,7 @@ addi  x7,  x0,  7		# Place 7  in x7
 addi  x8,  x0,  8		# Place 8  in x8
 addi  x9,  x0,  9		# Place 9  in x9
 addi  x10, x0,  10		# Place 10 in x10
+nop
+nop
+nop
 wfi
