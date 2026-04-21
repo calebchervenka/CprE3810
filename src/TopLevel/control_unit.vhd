@@ -12,13 +12,13 @@ entity control_unit is
     port(
         i_Inst      : in std_logic_vector(DATA_WIDTH-1 downto 0);
         o_Branch    : out std_logic_vector(1 downto 0);
-        o_Branch_Cond   : out std_logic;
+        -- o_Branch_Cond   : out std_logic;
         o_ALUSrcA   : out std_logic_vector(1 downto 0);
         o_ALUSrcB   : out std_logic_vector(1 downto 0);
         o_MemToReg  : out std_logic;
         o_MemWrite  : out std_logic;
         o_RegWrite  : out std_logic;
-        o_Jalr      : out std_logic;
+        -- o_Jalr      : out std_logic;
         o_Halt      : out std_logic
     );
 end control_unit;
