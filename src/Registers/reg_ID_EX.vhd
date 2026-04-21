@@ -57,7 +57,7 @@ architecture structure of reg_ID_EX is
     end component;
 
 begin
-    reg_PC : reg_N
+    reg_PC : reg_N -- PC register
     generic map(
         N => N
     )
@@ -69,7 +69,7 @@ begin
         o_Q     => o_PC
     );
 
-    reg_imm : reg_N
+    reg_imm : reg_N -- immediate register
     generic map(
         N => N
     )
@@ -81,7 +81,7 @@ begin
         o_Q     => o_imm
     );
 
-    reg_RD0 : reg_N
+    reg_RD0 : reg_N -- RD0 register
     generic map(
         N => N
     )
@@ -93,7 +93,7 @@ begin
         o_Q     => o_RD0
     );
 
-    reg_RD1 : reg_N
+    reg_RD1 : reg_N -- RD1 register
     generic map(
         N => N
     )

@@ -58,7 +58,7 @@ architecture structure of reg_EX_MEM is
     end component;
 
 begin
-    reg_PC : reg_N
+    reg_PC : reg_N -- PC register
     generic map(
         N => N
     )
@@ -82,7 +82,7 @@ begin
         o_Q     => o_Inst
     );
 
-    reg_ALUResult : reg_N
+    reg_ALUResult : reg_N -- ALU result register
     generic map(
         N => N
     )
@@ -118,7 +118,7 @@ begin
         o_Q(0)  => o_RegWr
     );
 
-    reg_MemToReg : reg_N
+    reg_MemToReg : reg_N -- MemToReg register
     generic map(
         N => 1
     )
