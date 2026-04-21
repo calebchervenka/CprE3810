@@ -32,7 +32,7 @@ entity reg_EX_MEM is
 
 end reg_EX_MEM;
 
-structure architecture of reg_EX_MEM is
+architecture structure of reg_EX_MEM is
     ---------------------------
     --      Components
     ---------------------------
@@ -48,7 +48,7 @@ structure architecture of reg_EX_MEM is
     end component;
 
 begin
-    reg_PC : reg_N
+    reg_PC : reg_N -- PC register
     generic map(
         N => 32
     )
@@ -60,7 +60,7 @@ begin
         o_Q     => o_PC
     );
 
-    reg_DMEMOut : reg_N
+    reg_DMEMOut : reg_N -- DMEM output register
     generic map(
         N => 32
     )
@@ -72,7 +72,7 @@ begin
         o_Q     => o_DMEMOut
     );
 
-    reg_LoadData : reg_N
+    reg_LoadData : reg_N -- Load data register for ALU result
     generic map(
         N => 32
     )
@@ -84,7 +84,7 @@ begin
         o_Q     => o_LoadData
     );
 
-    reg_rd : reg_N
+    reg_rd : reg_N -- rd register
     generic map(
         N => 5
     )
@@ -92,11 +92,11 @@ begin
         i_Clk   => i_Clk,
         i_Rst   => i_Rst,
         i_WE    => '1',
-        i_D     => (others => '0') & i_rd, -- zero extend the rd input to fit into the register
+        i_D     => i_rd,
         o_Q     => o_rd
     );
 
-    reg_RegWrite : reg_N
+    reg_RegWrite : reg_N -- RegWrite register
     generic map(
         N => 1
     )
@@ -108,7 +108,7 @@ begin
         o_Q(0)     => o_RegWrite
     );
 
-    reg_MemToReg : reg_N
+    reg_MemToReg : reg_N -- MemToReg register
     generic map(
         N => 1
     )

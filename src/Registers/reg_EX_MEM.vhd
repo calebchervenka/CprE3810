@@ -49,7 +49,7 @@ architecture structure of reg_EX_MEM is
     end component;
 
 begin
-    reg_PC : reg_N
+    reg_PC : reg_N -- PC register
     generic map(
         N => 32
     )
@@ -61,7 +61,7 @@ begin
         o_Q     => o_PC
     );
 
-    reg_ALU_B : reg_N
+    reg_ALU_B : reg_N -- ALU B register
     generic map(
         N => 32
     )
@@ -73,7 +73,7 @@ begin
         o_Q     => o_ALU_B
     );
 
-    reg_ALUResult : reg_N
+    reg_ALUResult : reg_N -- ALU result register
     generic map(
         N => 32
     )
@@ -85,7 +85,19 @@ begin
         o_Q     => o_ALUResult
     );
 
-    reg_MemWrite : reg_N
+    reg_rd : reg_N -- rd register
+    generic map(
+        N => 5
+    )
+    port map(
+        i_Clk   => i_Clk,
+        i_Rst   => i_Rst,
+        i_WE    => '1',
+        i_D     => i_rd,
+        o_Q     => o_rd
+    );
+
+    reg_MemWrite : reg_N -- MemWrite register
     generic map(
         N => 1
     )
@@ -97,7 +109,7 @@ begin
         o_Q(0)     => o_MemWrite
     );
 
-    reg_RegWrite : reg_N
+    reg_RegWrite : reg_N -- RegWrite register
     generic map(
         N => 1
     )
@@ -109,7 +121,7 @@ begin
         o_Q(0)     => o_RegWrite
     );
 
-    reg_MemToReg : reg_N
+    reg_MemToReg : reg_N -- MemToReg register
     generic map(
         N => 1
     )
@@ -119,18 +131,6 @@ begin
         i_WE    => '1',
         i_D(0)     => i_MemToReg,
         o_Q(0)     => o_MemToReg
-    );
-
-    reg_rd : reg_N
-    generic map(
-        N => 5
-    )
-    port map(
-        i_Clk   => i_Clk,
-        i_Rst   => i_Rst,
-        i_WE    => '1',
-        i_D     => i_rd,
-        o_Q     => o_rd
     );
 
 end structure;
