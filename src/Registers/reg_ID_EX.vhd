@@ -69,7 +69,7 @@ architecture structure of reg_ID_EX is
     end component;
 
 begin
-    reg_PC : reg_N
+    reg_PC : reg_N -- PC register
     generic map(
         N => 32
     )
@@ -81,7 +81,7 @@ begin
         o_Q     => o_PC
     );
 
-    reg_imm : reg_N
+    reg_imm : reg_N -- immediate register
     generic map(
         N => 32
     )
@@ -93,7 +93,7 @@ begin
         o_Q     => o_imm
     );
 
-    reg_RD0 : reg_N
+    reg_RD0 : reg_N -- RD0 register
     generic map(
         N => 32
     )
@@ -105,7 +105,7 @@ begin
         o_Q     => o_RD0
     );
 
-    reg_RD1 : reg_N
+    reg_RD1 : reg_N -- RD1 register
     generic map(
         N => 32
     )
@@ -116,6 +116,127 @@ begin
         i_D     => i_RD1,
         o_Q     => o_RD1
     );
+
+    reg_ALUCtrl : reg_N -- ALU control register
+    generic map(
+        N => 4
+    )
+    port map(
+        i_Clk  => i_Clk,
+        i_Rst   => i_Rst,
+        i_WE    => '1',
+        i_D     => i_ALUCtrl,
+        o_Q     => o_ALUCtrl
+    );
+
+    reg_Branch : reg_N -- Branch control register
+    generic map(
+        N => 2
+    )
+    port map(
+        i_Clk => i_Clk,
+        i_Rst => i_Rst,
+        i_WE  => '1',
+        i_D   => i_Branch,
+        o_Q   => o_Branch
+    );
+
+    reg_Branch_Cond : reg_N -- Branch condition control register
+    generic map(
+        N => 1
+    )
+    port map(
+        i_Clk => i_Clk,
+        i_Rst => i_Rst,
+        i_WE  => '1',
+        i_D(0)   => i_Branch_Cond,
+        o_Q(0)   => o_Branch_Cond
+    );
+
+    reg_ALUSrcA : reg_N -- ALUSrcA control register
+    generic map(
+        N => 2
+    )
+    port map(
+        i_Clk => i_Clk,
+        i_Rst => i_Rst,
+        i_WE  => '1',
+        i_D   => i_ALUSrcA,
+        o_Q   => o_ALUSrcA
+    );
+
+    reg_ALUSrcB : reg_N -- ALUSrcB control register
+    generic map(
+        N => 2
+    )
+    port map(
+        i_Clk => i_Clk,
+        i_Rst => i_Rst,
+        i_WE  => '1',
+        i_D   => i_ALUSrcB,
+        o_Q   => o_ALUSrcB
+    );
+
+    reg_MemToReg : reg_N -- MemToReg control register
+    generic map(
+        N => 1
+    )
+    port map(
+        i_Clk => i_Clk,
+        i_Rst => i_Rst,
+        i_WE  => '1',
+        i_D(0)   => i_MemToReg,
+        o_Q(0)   => o_MemToReg
+    );
+
+    reg_MemWrite : reg_N -- MemWrite control register
+    generic map(
+        N => 1
+    )
+    port map(
+        i_Clk => i_Clk,
+        i_Rst => i_Rst,
+        i_WE  => '1',
+        i_D(0)   => i_MemWrite,
+        o_Q(0)   => o_MemWrite
+    );
+
+    reg_RegWrite : reg_N -- RegWrite control register
+    generic map(
+        N => 1
+    )
+    port map(
+        i_Clk => i_Clk,
+        i_Rst => i_Rst,
+        i_WE  => '1',
+        i_D(0)   => i_RegWrite,
+        o_Q(0)   => o_RegWrite
+    );
+
+    reg_Jalr : reg_N -- Jalr control register
+    generic map(
+        N => 1
+    )
+    port map(
+        i_Clk => i_Clk,
+        i_Rst => i_Rst,
+        i_WE  => '1',
+        i_D(0)   => i_Jalr,
+        o_Q(0)   => o_Jalr
+    );
+
+    reg_Halt : reg_N -- Halt control register
+    generic map(
+        N => 1
+    )
+    port map(
+        i_Clk => i_Clk,
+        i_Rst => i_Rst,
+        i_WE  => '1',
+        i_D(0)   => i_Halt,
+        o_Q(0)   => o_Halt
+    );
+    
 
     end structure;
 
