@@ -45,7 +45,7 @@ entity reg_MEM_WB is
 
 end reg_MEM_WB;
 
-structure architecture of reg_EX_MEM is
+architecture structure of reg_MEM_WB is
     ---------------------------
     --      Components
     ---------------------------
@@ -61,7 +61,7 @@ structure architecture of reg_EX_MEM is
     end component;
 
 begin
-    reg_PC : reg_N
+    reg_Inst : reg_N
     generic map(
         N => N
     )
@@ -69,11 +69,35 @@ begin
         i_Clk   => i_Clk,
         i_Rst   => i_Rst,
         i_WE    => '1',
-        i_D     => i_PC,
-        o_Q     => o_PC
+        i_D     => i_Inst,
+        o_Q     => o_Inst
     );
 
-    reg_DMEMOut : reg_N
+    -- reg_ALUResult : reg_N
+    -- generic map(
+    --     N => N
+    -- )
+    -- port map(
+    --     i_Clk   => i_Clk,
+    --     i_Rst   => i_Rst,
+    --     i_WE    => '1',
+    --     i_D     => i_ALUResult,
+    --     o_Q     => o_ALUResult
+    -- );
+
+    -- reg_LoadData : reg_N
+    -- generic map(
+    --     N => N
+    -- )
+    -- port map(
+    --     i_Clk   => i_Clk,
+    --     i_Rst   => i_Rst,
+    --     i_WE    => '1',
+    --     i_D     => i_LoadData,
+    --     o_Q     => o_LoadData
+    -- );
+
+    reg_RegWr : reg_N
     generic map(
         N => 1
     )
@@ -85,19 +109,19 @@ begin
         o_Q(0)  => o_RegWr
     );
 
-    reg_LoadData : reg_N
-    generic map(
-        N => 32
-    )
-    port map(
-        i_Clk   => i_Clk,
-        i_Rst   => i_Rst,
-        i_WE    => '1',
-        i_D     => i_LoadData,
-        o_Q     => o_LoadData
-    );
+    -- reg_MemToReg : reg_N
+    -- generic map(
+    --     N => 1
+    -- )
+    -- port map(
+    --     i_Clk   => i_Clk,
+    --     i_Rst   => i_Rst,
+    --     i_WE    => '1',
+    --     i_D(0)  => i_MemToReg,
+    --     o_Q(0)  => o_MemToReg
+    -- );
 
-    reg_rd : reg_N
+    reg_RegWrData : reg_N
     generic map(
         N => N
     )
@@ -105,11 +129,11 @@ begin
         i_Clk   => i_Clk,
         i_Rst   => i_Rst,
         i_WE    => '1',
-        i_D     => (others => '0') & i_rd, -- zero extend the rd input to fit into the register
-        o_Q     => o_rd
+        i_D     => i_RegWrData,
+        o_Q     => o_RegWrData
     );
 
-    reg_RegWrite : reg_N
+    reg_Halt : reg_N
     generic map(
         N => 1
     )
@@ -117,20 +141,8 @@ begin
         i_Clk   => i_Clk,
         i_Rst   => i_Rst,
         i_WE    => '1',
-        i_D(0)     => i_RegWrite, -- supposedly have to aggregate the 1 bit control signal into a vector to use the reg_N component
-        o_Q(0)     => o_RegWrite
+        i_D(0)  => i_Halt,
+        o_Q(0)  => o_Halt
     );
-
-    reg_MemToReg : reg_N
-    generic map(
-        N => 1
-    )
-    port map(
-        i_Clk   => i_Clk,
-        i_Rst   => i_Rst,
-        i_WE    => '1',
-        i_D(0)     => i_MemToReg,
-        o_Q(0)     => o_MemToReg
-    );    
 
 end structure;
