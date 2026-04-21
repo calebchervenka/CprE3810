@@ -9,9 +9,10 @@ entity reg_IF_ID is
     port(i_CLK      : in std_logic; -- clock
          i_RST      : in std_logic; -- reset 
          i_LD       : in std_logic; -- load
+
          i_PC       : in std_logic_vector(N-1 downto 0); -- PC input
-         i_Inst     : in std_logic_vector(N-1 downto 0); -- instruction memory input
          o_PC       : out std_logic_vector(N-1 downto 0); -- output for PC
+         i_Inst     : in std_logic_vector(N-1 downto 0); -- instruction memory input
          o_Inst     : out std_logic_vector(N-1 downto 0) -- output for instruction memory
          );
 end reg_IF_ID;
@@ -34,7 +35,7 @@ architecture structure of reg_IF_ID is
 begin
     reg_PC : reg_N
     generic map(
-        N => 32
+        N => N
     )
     port map(
         i_Clk   => i_Clk,
@@ -46,7 +47,7 @@ begin
 
     reg_Inst : reg_N
     generic map(
-        N => 32
+        N => N
     )
     port map(
         i_Clk   => i_Clk,

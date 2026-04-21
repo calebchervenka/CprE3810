@@ -8,49 +8,37 @@ use work.RISCV_types.all;
 
 entity reg_ID_EX is
     generic (N : integer := DATA_WIDTH);
-    port (i_CLK         : in std_logic;
-          i_RST         : in std_logic;
-          i_LD          : in std_logic;
+    port(i_CLK        : in std_logic;
+         i_Rst        : in std_logic;
+         i_LD         : in std_logic;
 
-
-          -- Data Decode inputs
-          i_PC : in std_logic_vector(N-1 downto 0); -- PC input
-          i_imm : in std_logic_vector(N-1 downto 0); -- immediate input
-          i_RD0 : in std_logic_vector(N-1 downto 0); -- RS0 Data input
-          i_RD1 : in std_logic_vector(N-1 downto 0); -- RS1 Data input
-          i_ALUCtrl : in std_logic_vector(3 downto 0); -- ALU control input | THIS MIGHT BE WRONG
-
-
-          -- control signal inputs
-          i_Branch       : in std_logic_vector(1 downto 0);
-          i_Branch_Cond  : in std_logic;
-          i_ALUSrcA      : in std_logic_vector(1 downto 0);
-          i_ALUSrcB      : in std_logic_vector(1 downto 0);
-          i_MemToReg     : in std_logic;
-          i_MemWrite     : in std_logic;
-          i_RegWrite     : in std_logic;
-          i_Jalr         : in std_logic;
-          i_Halt         : in std_logic;
-
-        -- Data Decode outputs
-          o_PC          : out std_logic_vector(N-1 downto 0); -- PC output
-          o_imm         : out std_logic_vector(N-1 downto 0); -- immediate output
-          o_RD0         : out std_logic_vector(N-1 downto 0); -- RS0 Data output
-          o_RD1         : out std_logic_vector(N-1 downto 0);
-          o_ALUCtrl : out std_logic_vector(3 downto 0); -- ALU control input | THIS MIGHT BE WRONG
-
-
-          -- control signal outputs
-          o_Branch      : out std_logic_vector(1 downto 0); 
-          o_Branch_Cond : out std_logic;
-          o_ALUSrcA     : out std_logic_vector(1 downto 0);
-          o_ALUSrcB     : out std_logic_vector(1 downto 0);
-          o_MemToReg    : out std_logic;
-          o_MemWrite    : out std_logic;
-          o_RegWrite    : out std_logic;
-          o_Jalr        : out std_logic;
-          o_Halt        : out std_logic
-          );
+         i_PC         : in std_logic_vector(N-1 downto 0);
+         o_PC         : out std_logic_vector(N-1 downto 0);
+         i_Imm        : in std_logic_vector(N-1 downto 0);
+         o_Imm        : out std_logic_vector(N-1 downto 0);
+         i_RD0        : in std_logic_vector(N-1 downto 0);
+         o_RD0        : out std_logic_vector(N-1 downto 0);
+         i_RD1        : in std_logic_vector(N-1 downto 0);
+         o_RD1        : out std_logic_vector(N-1 downto 0);
+         i_Inst       : in std_logic_vector(N-1 downto 0);
+         o_Inst       : out std_logic_vector(N-1 downto 0);
+         i_ALUSrcA    : in std_logic_vector(1 downto 0);
+         o_ALUSrcA    : out std_logic_vector(1 downto 0);
+         i_ALUSrcB    : in std_logic_vector(1 downto 0);
+         o_ALUSrcB    : out std_logic_vector(1 downto 0);
+         i_ALUCtrl    : in std_logic_vector(ALU_CTRL_WIDTH-1 downto 0);
+         o_ALUCtrl    : out std_logic_vector(ALU_CTRL_WIDTH-1 downto 0);
+         i_Branch     : in std_logic_vector(1 downto 0);
+         o_Branch     : out std_logic_vector(1 downto 0);
+         i_Branch_Cd  : in std_logic;
+         o_Branch_Cd  : out std_logic;
+         i_RegWr      : in std_logic;
+         o_RegWr      : out std_logic;
+         i_MemToReg   : in std_logic;
+         o_MemToReg   : out std_logic;
+         i_Halt       : in std_logic;
+         o_Halt       : out std_logic
+         );
 end reg_ID_EX;
 
 architecture structure of reg_ID_EX is
@@ -71,7 +59,7 @@ architecture structure of reg_ID_EX is
 begin
     reg_PC : reg_N
     generic map(
-        N => 32
+        N => N
     )
     port map(
         i_Clk   => i_Clk,
@@ -83,7 +71,7 @@ begin
 
     reg_imm : reg_N
     generic map(
-        N => 32
+        N => N
     )
     port map(
         i_Clk   => i_Clk,
@@ -95,7 +83,7 @@ begin
 
     reg_RD0 : reg_N
     generic map(
-        N => 32
+        N => N
     )
     port map(
         i_Clk   => i_Clk,
@@ -107,7 +95,7 @@ begin
 
     reg_RD1 : reg_N
     generic map(
-        N => 32
+        N => N
     )
     port map(
         i_Clk   => i_Clk,
@@ -117,6 +105,112 @@ begin
         o_Q     => o_RD1
     );
 
-    end structure;
+    reg_Inst : reg_N
+    generic map(
+        N => N
+    )
+    port map(
+        i_Clk   => i_Clk,
+        i_Rst   => i_Rst,
+        i_WE    => '1',
+        i_D     => i_Inst,
+        o_Q     => o_Inst
+    );
 
-    
+    reg_ALUSrcA : reg_N
+    generic map(
+        N => 2
+    )
+    port map(
+        i_Clk   => i_Clk,
+        i_Rst   => i_Rst,
+        i_WE    => '1',
+        i_D     => i_ALUSrcA,
+        o_Q     => o_ALUSrcA
+    );
+
+    reg_ALUSrcB : reg_N
+    generic map(
+        N => 2
+    )
+    port map(
+        i_Clk   => i_Clk,
+        i_Rst   => i_Rst,
+        i_WE    => '1',
+        i_D     => i_ALUSrcB,
+        o_Q     => o_ALUSrcB
+    );
+
+    reg_ALUCtrl : reg_N
+    generic map(
+        N => ALU_CTRL_WIDTH
+    )
+    port map(
+        i_Clk   => i_Clk,
+        i_Rst   => i_Rst,
+        i_WE    => '1',
+        i_D     => i_ALUCtrl,
+        o_Q     => o_ALUCtrl
+    );
+
+    reg_Branch : reg_N
+    generic map(
+        N => 2
+    )
+    port map(
+        i_Clk   => i_Clk,
+        i_Rst   => i_Rst,
+        i_WE    => '1',
+        i_D     => i_Branch,
+        o_Q     => o_Branch
+    );
+
+    reg_Branch_Cd : reg_N
+    generic map(
+        N => 1
+    )
+    port map(
+        i_Clk   => i_Clk,
+        i_Rst   => i_Rst,
+        i_WE    => '1',
+        i_D(0)  => i_Branch_Cd,
+        o_Q(0)  => o_Branch_Cd
+    );
+
+    reg_RegWr : reg_N
+    generic map(
+        N => 1
+    )
+    port map(
+        i_Clk   => i_Clk,
+        i_Rst   => i_Rst,
+        i_WE    => '1',
+        i_D(0)  => i_RegWr,
+        o_Q(0)  => o_RegWr
+    );
+
+    reg_MemToReg : reg_N
+    generic map(
+        N => 1
+    )
+    port map(
+        i_Clk   => i_Clk,
+        i_Rst   => i_Rst,
+        i_WE    => '1',
+        i_D(0)  => i_MemToReg,
+        o_Q(0)  => o_MemToReg
+    );
+
+    reg_Halt : reg_N
+    generic map(
+        N => 1
+    )
+    port map(
+        i_Clk   => i_Clk,
+        i_Rst   => i_Rst,
+        i_WE    => '1',
+        i_D(0)  => i_Halt,
+        o_Q(0)  => o_Halt
+    );
+
+end structure;
