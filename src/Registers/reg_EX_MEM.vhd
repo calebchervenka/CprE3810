@@ -19,6 +19,10 @@ entity reg_EX_MEM is
         --  o_RD1        : out std_logic_vector(N-1 downto 0);
          i_Inst       : in std_logic_vector(N-1 downto 0);
          o_Inst       : out std_logic_vector(N-1 downto 0);
+         i_DMemData   : in std_logic_vector(N-1 downto 0);
+         o_DMemData   : out std_logic_vector(N-1 downto 0);
+         i_DMemWr     : in std_logic;
+         o_DMemWr     : out std_logic;
         --  i_ALUSrcA    : in std_logic_vector(1 downto 0);
         --  o_ALUSrcA    : out std_logic_vector(1 downto 0);
         --  i_ALUSrcB    : in std_logic_vector(1 downto 0);
@@ -80,6 +84,30 @@ begin
         i_WE    => '1',
         i_D     => i_Inst,
         o_Q     => o_Inst
+    );
+
+    reg_DMemData : reg_N
+    generic map(
+        N => N
+    )
+    port map(
+        i_Clk   => i_Clk,
+        i_Rst   => i_Rst,
+        i_WE    => '1',
+        i_D     => i_DMemData,
+        o_Q     => o_DMemData
+    );
+
+    reg_DMemWr : reg_N
+    generic map(
+        N => 1
+    )
+    port map(
+        i_Clk   => i_Clk,
+        i_Rst   => i_Rst,
+        i_WE    => '1',
+        i_D(0)  => i_DMemWr,
+        o_Q(0)  => o_DMemWr
     );
 
     reg_ALUResult : reg_N -- ALU result register

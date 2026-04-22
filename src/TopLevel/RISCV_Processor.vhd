@@ -65,7 +65,9 @@ architecture structure of RISCV_Processor is
   signal s_PC_ID        : std_logic_vector(N-1 downto 0);
   signal s_Imm_ID       : std_logic_vector(N-1 downto 0);
   signal s_Inst_ID      : std_logic_vector(N-1 downto 0);
+  signal s_DMemData_ID   : std_logic_vector(N-1 downto 0);
 
+  signal s_DMemWr_ID    : std_logic;
   signal c_ALUSrcA_ID   : std_logic_vector(1 downto 0);
   signal c_ALUSrcB_ID   : std_logic_vector(1 downto 0);
   signal c_ALUCtrl_ID   : std_logic_vector(ALU_CTRL_WIDTH-1 downto 0);
@@ -82,9 +84,11 @@ architecture structure of RISCV_Processor is
   signal s_PC_EX        : std_logic_vector(N-1 downto 0);
   signal s_Imm_EX       : std_logic_vector(N-1 downto 0);
   signal s_Inst_EX      : std_logic_vector(N-1 downto 0);
+  signal s_DMemData_EX   : std_logic_vector(N-1 downto 0);
   signal s_RD0_EX       : std_logic_vector(N-1 downto 0);
   signal s_RD1_EX       : std_logic_vector(N-1 downto 0);
 
+  signal s_DMemWr_EX    : std_logic;
   signal c_ALUSrcA_EX   : std_logic_vector(1 downto 0);
   signal c_ALUSrcB_EX   : std_logic_vector(1 downto 0);
   signal c_ALUCtrl_EX   : std_logic_vector(ALU_CTRL_WIDTH-1 downto 0);
@@ -102,11 +106,13 @@ architecture structure of RISCV_Processor is
   -- Memory
   signal s_PC_MEM       : std_logic_vector(N-1 downto 0);
   -- signal s_Imm_MEM      : std_logic_vector(N-1 downto 0);
-  signal s_Inst_MEM     : std_logic_vector(N-1 downto 0);
-  signal s_ALUResult_MEM : std_logic_vector(N-1 downto 0);
+  signal s_Inst_MEM       : std_logic_vector(N-1 downto 0);
+  signal s_DMemData_MEM    : std_logic_vector(N-1 downto 0);
+  signal s_ALUResult_MEM  : std_logic_vector(N-1 downto 0);
   signal s_LoadData_MEM   : std_logic_vector(N-1 downto 0);
   signal s_RegWrData_MEM  : std_logic_vector(N-1 downto 0);
 
+  signal s_DMemWr_MEM   : std_logic;
   signal c_MemToReg_MEM : std_logic;
   signal c_RegWr_MEM    : std_logic;
   signal c_Halt_MEM     : std_logic;
@@ -180,6 +186,7 @@ architecture structure of RISCV_Processor is
       i_Reg1Data  : in std_logic_vector(DATA_WIDTH-1 downto 0);
       i_Rst     : in std_logic;
       i_Clk     : in std_logic;
+      i_PC_EX : in std_logic_vector(DATA_WIDTH - 1 downto 0);
       o_PC      : out std_logic_vector(DATA_WIDTH-1 downto 0));
   end component;
 
@@ -250,6 +257,10 @@ architecture structure of RISCV_Processor is
          o_RD1        : out std_logic_vector(N-1 downto 0);
          i_Inst       : in std_logic_vector(N-1 downto 0);
          o_Inst       : out std_logic_vector(N-1 downto 0);
+         i_DMemData   : in std_logic_vector(N-1 downto 0);
+         o_DMemData   : out std_logic_vector(N-1 downto 0);
+         i_DMemWr     : in std_logic;
+         o_DMemWr     : out std_logic;
          i_ALUSrcA    : in std_logic_vector(1 downto 0);
          o_ALUSrcA    : out std_logic_vector(1 downto 0);
          i_ALUSrcB    : in std_logic_vector(1 downto 0);
@@ -284,6 +295,10 @@ architecture structure of RISCV_Processor is
         --  o_RD1        : out std_logic_vector(N-1 downto 0);
          i_Inst       : in std_logic_vector(N-1 downto 0);
          o_Inst       : out std_logic_vector(N-1 downto 0);
+         i_DMemData   : in std_logic_vector(N-1 downto 0);
+         o_DMemData   : out std_logic_vector(N-1 downto 0);
+         i_DMemWr     : in std_logic;
+         o_DMemWr     : out std_logic;
         --  i_ALUSrcA    : in std_logic_vector(1 downto 0);
         --  o_ALUSrcA    : out std_logic_vector(1 downto 0);
         --  i_ALUSrcB    : in std_logic_vector(1 downto 0);
@@ -407,6 +422,7 @@ begin
       i_Reg1Data  => s_RD0_EX,
       i_Rst     => iRst,
       i_Clk     => iClk,
+      i_PC_EX   => s_PC_EX,
       o_PC      => s_PC_IF);
 
   IMem : mem
@@ -444,7 +460,7 @@ begin
     o_ALUSrcA  => c_ALUSrcA_ID,
     o_ALUSrcB  => c_ALUSrcB_ID,
     o_MemToReg  => c_MemToReg_ID,
-    o_MemWrite  => s_DMemWr,
+    o_MemWrite  => s_DMemWr_ID,
     o_RegWrite  => c_RegWr_ID,
     -- o_Jalr      => c_Jalr_ID,
     o_Halt      => c_Halt_ID
@@ -479,7 +495,7 @@ begin
         i_CLK   => iClk,
         i_RST   => iRst,
         i_WE    => c_RegWr_WB);
-  s_DMemData  <= s_Reg2Data_ID;
+  s_DMemData_ID  <= s_Reg2Data_ID;
 
   ID_EX : reg_ID_EX
     generic map(N   => DATA_WIDTH)
@@ -494,7 +510,9 @@ begin
       i_RD0 => s_Reg1Data_ID, o_RD0 => s_RD0_EX,
       i_RD1 => s_Reg2Data_ID, o_RD1 => s_RD1_EX,
       i_Inst => s_Inst_ID,    o_Inst => s_Inst_EX,
+      i_DMemData  => s_DMemData_ID, o_DMemData => s_DMemData_EX,
 
+      i_DMemWr => s_DMemWr_ID,        o_DMemWr => s_DMemWr_EX,
       i_ALUSrcA => c_ALUSrcA_ID,      o_ALUSrcA => c_ALUSrcA_EX,
       i_ALUSrcB => c_ALUSrcB_ID,      o_ALUSrcB => c_ALUSrcB_EX,
       i_ALUCtrl => c_ALUCtrl_ID,      o_ALUCtrl => c_ALUCtrl_EX,
@@ -549,6 +567,8 @@ begin
       i_LD    =>  '1',
       i_PC    =>  s_PC_EX, o_PC    =>  s_PC_Mem,
       i_Inst => s_Inst_EX, o_Inst => s_Inst_MEM,
+      i_DMemData  => s_DMemData_EX, o_DMemData => s_DMemData_MEM,
+      i_DMemWr => s_DMemWr_EX, o_DMemWr => s_DMemWr_MEM,
       i_ALUResult => s_ALUResult_EX, o_ALUResult => s_ALUResult_MEM,
       -- i_LoadData  => s_LoadData_EX, o_LoadData  => s_LoadData_MEM,
       i_RegWr => c_RegWr_EX, o_RegWr => c_RegWr_MEM,
@@ -567,10 +587,12 @@ begin
     generic map(ADDR_WIDTH => ADDR_WIDTH,
                 DATA_WIDTH => N)
     port map(clk  => iCLK,
-             addr => s_DMemAddr(11 downto 2),
-             data => s_DMemData,
-             we   => s_DMemWr,
+             addr => s_DMemAddr(11 downto 2), -- Address pulled from instruction in memory cycle
+             data => s_DMemData_MEM,  -- Data pulled from instruction in decode cycle
+             we   => s_DMemWr_MEM,    -- Write pulled from instruction in decode cycle
              q    => s_DMemOut);
+    s_DMemData <= s_DMemData_MEM;
+    s_DMemWr <= s_DMemWr_MEM;
 
   mem_ext_inst : mem_ext
     generic map(DATA_WIDTH => N)
