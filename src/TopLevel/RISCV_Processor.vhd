@@ -102,6 +102,8 @@ architecture structure of RISCV_Processor is
   signal s_ImmU_EX      : std_logic_vector(N-1 downto 0);
   signal s_ALU_A_EX     : std_logic_vector(N-1 downto 0);
   signal s_ALU_B_EX     : std_logic_vector(N-1 downto 0);
+  signal s_ALU_A        : std_logic_vector(N-1 downto 0);
+  signal s_ALU_B        : std_logic_vector(N-1 downto 0);
 
   -- Memory
   signal s_PC_MEM       : std_logic_vector(N-1 downto 0);
@@ -129,6 +131,11 @@ architecture structure of RISCV_Processor is
   signal c_MemToReg_WB  : std_logic;
   signal c_RegWr_WB     : std_logic;
   signal c_Halt_WB     : std_logic;
+
+  -- Forwarding Controls
+  signal c_FW_DMemData : std_logic;
+  signal c_FW_RegData1 : std_logic;
+  signal c_FW_RegData2 : std_logic;
 
   
   -- Control signals
@@ -407,6 +414,23 @@ architecture structure of RISCV_Processor is
          o_O  : out std_logic_vector(N-1 downto 0));
   end component;
 
+  component FU is
+    generic(DATA_WIDTH : integer);
+    port (
+        i_inst_EX     : in std_logic_vector(31 downto 0);
+        i_inst_MEM    : in std_logic_vector(31 downto 0);
+        i_inst_WB     : in std_logic_vector(31 downto 0);
+        i_rs1_EX      : in std_logic_vector(4 downto 0);
+        i_rs2_EX      : in std_logic_vector(4 downto 0);
+        i_rs2_MEM     : in std_logic_vector(4 downto 0);
+        i_rd_MEM      : in std_logic_vector(4 downto 0);
+        i_rd_WB       : in std_logic_vector(4 downto 0);
+        o_FW_DMemData : out std_logic;
+        o_FW_RegData1 : out std_logic;
+        o_FW_RegData2 : out std_logic
+    );
+    end component;
+
 begin
   s_Ovfl <= '0';
 
@@ -534,10 +558,20 @@ begin
   --  EXECUTE
   -------------------------------
 
+  mux_alu_a_fw : mux2t1_N
+    generic map(N => N)
+    port map(
+      i_S   => c_FW_RegData1,
+      i_D0  => s_RD0_EX,
+      i_D1  => s_RegWrData_MEM,
+      o_O   => s_ALU_A
+    );
+
   mux_alu_a : mux4t1_N
     generic map(N => N)
     port map(i_S  => c_ALUSrcA_EX,
-             i_D0 => s_RD0_EX,
+             i_D0 => s_ALU_A,
+            --  i_D0 => s_RD0_EX,
              i_D1 => (s_PC_EX or x"00400000"),
              i_D2 => x"00000000",
              i_D3 => x"00000000",
@@ -546,10 +580,20 @@ begin
   s_ImmU_EX(31 downto 12) <= s_Imm_EX(19 downto 0);
   s_ImmU_EX(11 downto 0) <= (others => '0');
 
+  mux_alu_b_fw : mux2t1_N
+    generic map(N => N)
+    port map(
+      i_S   => c_FW_RegData1,
+      i_D0  => s_RD1_EX,
+      i_D1  => s_RegWrData_MEM,
+      o_O   => s_ALU_B
+    );
+
   mux_alu_b : mux4t1_N
     generic map(N => N)
     port map(i_S  => c_ALUSrcB_EX,
-             i_D0 => s_RD1_EX,
+             i_D0 => s_ALU_B,
+            --  i_D0 => s_RD1_EX,
              i_D1 => s_Imm_EX,
              i_D2 => x"00000004",
              i_D3 => s_ImmU_EX,
@@ -582,17 +626,42 @@ begin
       i_Halt => c_Halt_EX, o_Halt => c_Halt_MEM
     );
 
+  forwarding_unit : FU
+    generic map(DATA_WIDTH => N)
+    port map(
+      i_inst_ex     => s_Inst_EX,
+      i_inst_mem    => s_Inst_MEM,
+      i_inst_wb     => s_Inst_WB,
+      i_rs1_ex      => s_Inst_EX(19 downto 15),
+      i_rs2_EX      => s_Inst_EX(24 downto 20),
+      i_rs2_mem     => s_Inst_MEM(24 downto 20),
+      i_rd_mem      => s_Inst_Mem(11 downto 7),
+      i_rd_wb       => s_Inst_WB(11 downto 7),
+      o_fw_dmemdata => c_FW_DMemData,
+      o_FW_RegData1 => c_FW_RegData1,
+      o_FW_RegData2 => c_FW_RegData2
+    );
+
 
   -------------------------------
   --  MEMORY
   -------------------------------
+
+  dmem_forward_mux : mux2t1_N
+    generic map(N => N)
+    port map(
+      i_S  => c_FW_DMemData,
+      i_D0 => s_DMemData_MEM,
+      i_D1 => s_RegWrData_WB,
+      o_O  => s_DMemData
+    );
 
   DMem : mem
     generic map(ADDR_WIDTH => ADDR_WIDTH,
                 DATA_WIDTH => N)
     port map(clk  => iCLK,
              addr => s_DMemAddr(11 downto 2), -- Address pulled from instruction in memory cycle
-             data => s_DMemData_MEM,  -- Data pulled from instruction in decode cycle
+             data => s_DMemData,  -- Data pulled from instruction in decode cycle
              we   => s_DMemWr_MEM,    -- Write pulled from instruction in decode cycle
              q    => s_DMemOut);
 
@@ -632,7 +701,6 @@ begin
       i_Halt => c_Halt_MEM,             o_Halt => c_Halt_WB
     );
 
-  s_DMemData <= s_DMemData_MEM;
   s_DMemWr <= s_DMemWr_MEM;
   s_DMemAddr <= s_ALUResult_MEM;
 
