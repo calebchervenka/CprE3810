@@ -238,6 +238,8 @@ architecture structure of RISCV_Processor is
     port(i_CLK        : in std_logic;
          i_Rst        : in std_logic;
          i_LD         : in std_logic;
+         i_stall      : in std_logic;
+         i_flush      : in std_logic;
          i_PC         : in std_logic_vector(N-1 downto 0);
          o_PC         : out std_logic_vector(N-1 downto 0);
          i_Inst       : in std_logic_vector(N-1 downto 0);
@@ -249,6 +251,8 @@ architecture structure of RISCV_Processor is
     port(i_CLK        : in std_logic;
          i_Rst        : in std_logic;
          i_LD         : in std_logic;
+         i_stall      : in std_logic;
+         i_flush      : in std_logic;
          i_PC         : in std_logic_vector(N-1 downto 0);
          o_PC         : out std_logic_vector(N-1 downto 0);
          i_Imm        : in std_logic_vector(N-1 downto 0);
@@ -446,6 +450,8 @@ begin
       i_Clk   => iClk,
       i_Rst   => iRst,
       i_LD    => '1',
+      i_stall => '0',
+      i_flush => '0',
       i_PC    => s_PC_IF,
       i_Inst  => s_Inst_IF,
       o_PC    => s_PC_ID,
@@ -509,6 +515,8 @@ begin
       i_Clk   =>  iClk,
       i_Rst   =>  iRst,
       i_LD    =>  '1',
+      i_stall =>  '0',
+      i_flush =>  '0',
       i_PC    =>  s_PC_ID,
       o_PC    =>  s_PC_EX,
 
