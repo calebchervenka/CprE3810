@@ -11,6 +11,8 @@ entity reg_ID_EX is
     port(i_CLK        : in std_logic;
          i_Rst        : in std_logic;
          i_LD         : in std_logic;
+         i_stall      : in std_logic; -- stall
+         i_flush      : in std_logic; -- flush
 
          i_PC         : in std_logic_vector(N-1 downto 0);
          o_PC         : out std_logic_vector(N-1 downto 0);
@@ -60,7 +62,216 @@ architecture structure of reg_ID_EX is
         );
     end component;
 
+    component mux2t1_N is 
+        generic(N : integer);
+        port(
+            i_S : in std_logic;
+            i_D0 : in std_logic_vector(N-1 downto 0);
+            i_D1 : in std_logic_vector(N-1 downto 0);
+            o_O : out std_logic_vector(N-1 downto 0)
+        );
+    end component;
+
+
+    ------------
+    -- Signals
+    ------------
+    signal s_Inst_stall            : std_logic_vector(N-1 downto 0); -- output of stall mux, input to flush mux
+    signal s_Inst_stall_final      : std_logic_vector(N-1 downto 0); -- output of flush mux
+    signal s_PC_stall              : std_logic_vector(N-1 downto 0);
+    signal s_PC_stall_final        : std_logic_vector(N-1 downto 0);
+    
+    signal s_RegWr_stall           : std_logic;
+    signal s_RegWr_stall_final     : std_logic;
+    signal s_MemToReg_stall        : std_logic;
+    signal s_DMemWr_stall          : std_logic;
+    signal s_DMemWr_stall_final    : std_logic;
+    signal s_Halt_stall            : std_logic;
+    signal s_Halt_stall_final      : std_logic;
+    signal s_Branch_Cd_stall       : std_logic;
+    signal s_Branch_Cd_stall_final : std_logic;
+
 begin
+
+    -----------------------------------------------
+    -- Instructions Logic for Stalling and Flushing
+    -----------------------------------------------
+
+    -- stall : 1 = keep previous instruction, stall : 0 = load new instruction
+    mux_stall : mux2t1_N
+    generic map(
+        N => N
+    )
+    port map(
+        i_S => i_stall,
+        i_D0 => i_Inst, -- new instruction
+        i_D1 => o_Inst, -- previous instruction
+        o_O => s_Inst_stall -- output to instruction register
+    );
+
+    -- flush : 1 = insert NOP, flush : 0 = keep instruction from stall mux
+    mux_flush : mux2t1_N
+    generic map(
+        N => N
+    )
+    port map(
+        i_S => i_flush,
+        i_D0 => s_Inst_stall, -- instruction from stall mux
+        i_D1 => (others => '0'), -- NOP instruction
+        o_O => s_Inst_stall_final -- output to instruction register
+    );
+
+    -- RegWr
+
+    mux_RegWr_stall : mux2t1_N
+    generic map(
+        N => 1
+    )
+    port map(
+        i_S => i_stall,
+        i_D0(0) => i_RegWr,
+        i_D1(0) => o_RegWr,
+        o_O(0) => s_RegWr_stall
+    );
+
+    mux_RegWr_flush : mux2t1_N
+    generic map(
+        N => 1
+    )
+    port map(
+        i_S => i_flush,
+        i_D0(0) => s_RegWr_stall,
+        i_D1(0) => '0', -- flush turns off RegWr
+        o_O(0) => s_RegWr_stall_final
+    );
+
+    -- MemToReg
+
+    mux_MemToReg_stall : mux2t1_N
+    generic map(
+        N => 1
+    )
+    port map(
+        i_S => i_stall,
+        i_D0(0) => i_MemToReg,
+        i_D1(0) => o_MemToReg,
+        o_O(0) => s_MemToReg_stall
+    );
+
+    mux_MemToReg_flush : mux2t1_N
+    generic map(
+        N => 1
+    )
+    port map(
+        i_S => i_flush,
+        i_D0(0) => s_MemToReg_stall,
+        i_D1(0) => '0', -- flush turns off MemToReg
+        o_O(0) => s_MemToReg_stall_final
+    );
+
+    -- DMEMWr
+
+    mux_DMemWr_stall : mux2t1_N
+    generic map(
+        N => 1
+    )
+    port map(
+        i_S => i_stall,
+        i_D0(0) => i_DMemWr,
+        i_D1(0) => o_DMemWr,
+        o_O(0) => s_DMemWr_stall
+    );
+
+    mux_DMemWr_flush : mux2t1_N
+    generic map(
+        N => 1
+    )
+    port map(
+        i_S => i_flush,
+        i_D0(0) => s_DMemWr_stall,
+        i_D1(0) => '0', -- flush turns off DMemWr
+        o_O(0) => s_DMemWr_stall_final
+    );
+
+    -- HALT
+
+    mux_Halt_stall : mux2t1_N
+    generic map(
+        N => 1
+    )
+    port map(
+        i_S => i_stall,
+        i_D0(0) => i_Halt,
+        i_D1(0) => o_Halt,
+        o_O(0) => s_Halt_stall
+    );
+
+    mux_Halt_flush : mux2t1_N
+    generic map(
+        N => 1
+    )
+    port map(
+        i_S => i_flush,
+        i_D0(0) => s_Halt_stall,
+        i_D1(0) => '0', -- flush turns off Halt
+        o_O(0) => s_Halt_stall_final
+    );
+
+    -- BRANCH CD
+
+    mux_Branch_Cd_stall : mux2t1_N
+    generic map(
+        N => 1
+    )
+    port map(
+        i_S => i_stall,
+        i_D0(0) => i_Branch_Cd,
+        i_D1(0) => o_Branch_Cd,
+        o_O(0) => s_Branch_Cd_stall
+    );
+
+    mux_Branch_Cd_flush : mux2t1_N
+    generic map(
+        N => 1
+    )
+    port map(
+        i_S => i_flush,
+        i_D0(0) => s_Branch_Cd_stall,
+        i_D1(0) => '0', -- flush turns off Branch_Cd
+        o_O(0) => s_Branch_Cd_stall_final
+    );
+    
+    ---------------------------------------
+    -- PC Logic for Stalling and Flushing
+    ----------------------------------------
+
+    mux_stall_PC : mux2t1_N
+    generic map(
+        N => N
+    )
+    port map(
+        i_S => i_stall,
+        i_D0 => i_PC,
+        i_D1 => o_PC,
+        o_O => s_PC_stall
+    );
+
+    mux_flush_PC : mux2t1_N
+    generic map(
+        N => N
+    )
+    port map(
+        i_S => i_flush,
+        i_D0 => s_PC_stall,
+        i_D1 => (others => '0'),
+        o_O => s_PC_stall_final
+    );
+
+
+    ----------------------------------------
+    -- PC, Instruction, and other Registers
+    -----------------------------------------
+
     reg_PC : reg_N -- PC register
     generic map(
         N => N
@@ -69,8 +280,20 @@ begin
         i_Clk   => i_Clk,
         i_Rst   => i_Rst,
         i_WE    => '1',
-        i_D     => i_PC,
+        i_D     => s_PC_stall_final, -- resulting output from mux logic
         o_Q     => o_PC
+    );
+
+    reg_Inst : reg_N
+    generic map(
+        N => N
+    )
+    port map(
+        i_Clk   => i_Clk,
+        i_Rst   => i_Rst,
+        i_WE    => '1',
+        i_D     => s_Inst_stall_final, -- resulting output from mux logic
+        o_Q     => o_Inst
     );
 
     reg_imm : reg_N -- immediate register
@@ -109,18 +332,6 @@ begin
         o_Q     => o_RD1
     );
 
-    reg_Inst : reg_N
-    generic map(
-        N => N
-    )
-    port map(
-        i_Clk   => i_Clk,
-        i_Rst   => i_Rst,
-        i_WE    => '1',
-        i_D     => i_Inst,
-        o_Q     => o_Inst
-    );
-
     reg_DMemData : reg_N
     generic map(
         N => N
@@ -141,7 +352,7 @@ begin
         i_Clk   => i_Clk,
         i_Rst   => i_Rst,
         i_WE    => '1',
-        i_D(0)  => i_DMemWr,
+        i_D(0)  => s_DMemWr_stall_final, -- output from stall and flush mux logic
         o_Q(0)  => o_DMemWr
     );
 
@@ -201,7 +412,7 @@ begin
         i_Clk   => i_Clk,
         i_Rst   => i_Rst,
         i_WE    => '1',
-        i_D(0)  => i_Branch_Cd,
+        i_D(0)  => s_Branch_Cd_stall_final, -- output from stall and flush mux logic
         o_Q(0)  => o_Branch_Cd
     );
 
@@ -213,7 +424,7 @@ begin
         i_Clk   => i_Clk,
         i_Rst   => i_Rst,
         i_WE    => '1',
-        i_D(0)  => i_RegWr,
+        i_D(0)  => s_RegWr_stall_final, -- output from stall and flush mux logic
         o_Q(0)  => o_RegWr
     );
 
@@ -225,7 +436,7 @@ begin
         i_Clk   => i_Clk,
         i_Rst   => i_Rst,
         i_WE    => '1',
-        i_D(0)  => i_MemToReg,
+        i_D(0)  => s_MemToReg_stall_final, -- output from stall and flush mux logic
         o_Q(0)  => o_MemToReg
     );
 
@@ -237,7 +448,7 @@ begin
         i_Clk   => i_Clk,
         i_Rst   => i_Rst,
         i_WE    => '1',
-        i_D(0)  => i_Halt,
+        i_D(0)  => s_Halt_stall_final, -- output from stall and flush mux logic
         o_Q(0)  => o_Halt
     );
 

@@ -9,6 +9,8 @@ entity reg_IF_ID is
     port(i_CLK      : in std_logic; -- clock
          i_RST      : in std_logic; -- reset 
          i_LD       : in std_logic; -- load
+         i_stall    : in std_logic; -- stall
+         i_flush    : in std_logic; -- flush
 
          i_PC       : in std_logic_vector(N-1 downto 0); -- PC input
          o_PC       : out std_logic_vector(N-1 downto 0); -- output for PC
@@ -32,8 +34,87 @@ architecture structure of reg_IF_ID is
         );
     end component;
 
+    component mux2t1_N is 
+        generic(N : integer);
+        port(
+            i_S : in std_logic;
+            i_D0 : in std_logic_vector(N-1 downto 0);
+            i_D1 : in std_logic_vector(N-1 downto 0);
+            o_O : out std_logic_vector(N-1 downto 0)
+        );
+    end component;
+
+
+    ------------
+    -- Signals
+    ------------
+    signal s_Inst_stall       : std_logic_vector(N-1 downto 0); -- output of stall mux, input to flush mux
+    signal s_Inst_stall_final : std_logic_vector(N-1 downto 0); -- output of flush mux
+    signal s_PC_stall         : std_logic_vector(N-1 downto 0);
+    signal s_PC_stall_final   : std_logic_vector(N-1 downto 0);
+
+
 begin
-    reg_PC : reg_N
+
+    ----------------------------------------------
+    -- Instruction Logic for Stalling and Flushing
+    ----------------------------------------------
+
+    --stall : 1 = keep previous instruction, stall : 0 = load new instruction
+    mux_stall: mux2t1_N 
+    generic map( 
+        N => N
+    )
+    port map( 
+        i_S => i_stall,
+        i_D0 => i_Inst, -- new instruction
+        i_D1 => o_Inst, -- instruction from previous cycle
+        o_O => s_Inst_stall -- output to instruction register
+    );
+    
+    -- flush : 1 = insert NOP, flush : 0 = keep instruction from stall mux
+    mux_flush: mux2t1_N
+    generic map(
+        N => N
+    )
+    port map( 
+        i_S => i_flush,
+        i_D0 => s_Inst_stall, -- instruction from stall mux
+        i_D1 => (others => '0'), -- NOP instruction
+        o_O => s_Inst_stall_final -- output to instruction register
+    );
+
+    -------------------------------------
+    -- PC Logic for Stalling and Flushing
+    -------------------------------------
+
+    mux_stall_PC: mux2t1_N
+    generic map(
+        N => N
+    )
+    port map(
+        i_S => i_stall,
+        i_D0 => i_PC,
+        i_D1 => o_PC, -- PC from previous cycle
+        o_O => s_PC_stall
+    );
+
+    mux_flush_PC: mux2t1_N
+    generic map(
+        N => N
+    )
+    port map(
+        i_S => i_flush,
+        i_D0 => s_PC_stall,
+        i_D1 => (others => '0'),
+        o_O => s_PC_stall_final
+    );
+
+    ---------------------------------
+    -- PC and Instruction Registers
+    ---------------------------------
+
+        reg_PC : reg_N
     generic map(
         N => N
     )
@@ -41,9 +122,10 @@ begin
         i_Clk   => i_Clk,
         i_Rst   => i_Rst,
         i_WE    => '1',
-        i_D     => i_PC,
+        i_D     => s_PC_stall_final, -- resulting output from mux logic
         o_Q     => o_PC
     );
+
 
     reg_Inst : reg_N
     generic map(
@@ -53,8 +135,9 @@ begin
         i_Clk   => i_Clk,
         i_Rst   => i_Rst,
         i_WE    => '1',
-        i_D     => i_Inst,
+        i_D     => s_Inst_stall_final, -- resulting output from mux logic
         o_Q     => o_Inst
     );
 
 end structure;
+
