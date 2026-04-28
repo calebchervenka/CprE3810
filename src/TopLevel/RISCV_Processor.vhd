@@ -120,10 +120,12 @@ architecture structure of RISCV_Processor is
   -- Writeback
   -- signal s_PC_WB        : std_logic_vector(N-1 downto 0);
   signal s_Inst_WB      : std_logic_vector(N-1 downto 0);
+  signal s_DMemData_WB  : std_logic_vector(N-1 downto 0);
   signal s_ALUResult_WB : std_logic_vector(N-1 downto 0);
   signal s_LoadData_WB  : std_logic_vector(N-1 downto 0);
   signal s_RegWrData_WB : std_logic_vector(N-1 downto 0);
 
+  signal s_DMemWr_WB    : std_logic;
   signal c_MemToReg_WB  : std_logic;
   signal c_RegWr_WB     : std_logic;
   signal c_Halt_WB     : std_logic;
@@ -337,6 +339,10 @@ architecture structure of RISCV_Processor is
         --  o_RD1        : out std_logic_vector(N-1 downto 0);
          i_Inst       : in std_logic_vector(N-1 downto 0);
          o_Inst       : out std_logic_vector(N-1 downto 0);
+         i_DMemData   : in std_logic_vector(N-1 downto 0);
+         o_DMemData   : out std_logic_vector(N-1 downto 0);
+         i_DMemWr     : in std_logic;
+         o_DMemWr     : out std_logic;
         --  i_ALUSrcA    : in std_logic_vector(1 downto 0);
         --  o_ALUSrcA    : out std_logic_vector(1 downto 0);
         --  i_ALUSrcB    : in std_logic_vector(1 downto 0);
@@ -465,7 +471,7 @@ begin
     -- o_Jalr      => c_Jalr_ID,
     o_Halt      => c_Halt_ID
   );
-  s_RegWr <= c_RegWr_ID;
+  s_RegWr <= c_RegWr_WB;
 
   alu_control : acu
     generic map(DATA_WIDTH => N)
@@ -581,8 +587,6 @@ begin
   --  MEMORY
   -------------------------------
 
-  s_DMemAddr <= s_ALUResult_MEM;
-
   DMem : mem
     generic map(ADDR_WIDTH => ADDR_WIDTH,
                 DATA_WIDTH => N)
@@ -591,8 +595,6 @@ begin
              data => s_DMemData_MEM,  -- Data pulled from instruction in decode cycle
              we   => s_DMemWr_MEM,    -- Write pulled from instruction in decode cycle
              q    => s_DMemOut);
-    s_DMemData <= s_DMemData_MEM;
-    s_DMemWr <= s_DMemWr_MEM;
 
   mem_ext_inst : mem_ext
     generic map(DATA_WIDTH => N)
@@ -620,6 +622,8 @@ begin
       i_LD    =>  '1',
       -- i_PC    =>  s_PC_MEM,             o_PC    => s_PC_WB,
       i_Inst  =>  s_Inst_MEM,           o_Inst  => s_Inst_WB,
+      i_DMemData  => s_DMemData_MEM, o_DMemData => s_DMemData_WB,
+      i_DMemWr => s_DMemWr_MEM, o_DMemWr => s_DMemWr_WB,
       -- i_ALUResult =>  s_ALUResult_MEM,  o_ALUResult =>  s_ALUResult_WB,
       -- i_LoadData  =>  s_LoadData_MEM,   o_LoadData  =>  s_LoadData_WB,
       -- i_MemToReg  =>  c_MemToReg_MEM,   o_MemToReg  =>  c_MemToReg_WB,
@@ -627,6 +631,10 @@ begin
       i_RegWrData =>  s_RegWrData_MEM,  o_RegWrData =>  s_RegWrData_WB,
       i_Halt => c_Halt_MEM,             o_Halt => c_Halt_WB
     );
+
+  s_DMemData <= s_DMemData_MEM;
+  s_DMemWr <= s_DMemWr_MEM;
+  s_DMemAddr <= s_ALUResult_MEM;
 
 
   -------------------------------
