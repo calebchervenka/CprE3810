@@ -34,20 +34,19 @@ begin
 
 
     -- Protects against add/addi immediately before R-type instruction
-    o_FW_RegData1 <= '0';
-    -- o_FW_RegData1 <= '1' when 
-    --     (s_opcode_EX(4 downto 0) = "10011") and 
-    --     (s_opcode_MEM(4 downto 0) = "10011") and 
-    --     (i_rs1_EX = i_rd_MEM) and
-    --     not (i_rd_MEM = "00000")
-    -- else '0';
+    o_FW_RegData1 <= '1' when
+        (s_opcode_EX(4 downto 0) = "10011") and
+        (s_opcode_MEM(4 downto 0) = "10011") and
+        (i_rs1_EX = i_rd_MEM) and
+        not (i_rd_MEM = "00000")
+    else '0';
 
-    o_FW_RegData2 <= '0';
-    -- o_FW_RegData2 <= '1' when 
-    --     (s_opcode_EX(4 downto 0) = "10011") and 
-    --     (s_opcode_MEM(4 downto 0) = "10011") and 
-    --     (i_rs2_EX = i_rd_MEM) and
-    --     not (i_rd_MEM = "00000")
-    -- else '0';
+    o_FW_RegData2 <= '1' when 
+        (s_opcode_EX(4 downto 0) = "10011") and 
+        (s_opcode_MEM(4 downto 0) = "10011") and 
+        (i_rs2_EX = i_rd_MEM) and
+        not (i_rd_MEM = "00000")
+    else '0';
+    
 
 end structure;

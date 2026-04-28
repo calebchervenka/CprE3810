@@ -563,7 +563,7 @@ begin
     port map(
       i_S   => c_FW_RegData1,
       i_D0  => s_RD0_EX,
-      i_D1  => s_RegWrData_MEM,
+      i_D1  => s_ALUResult_MEM,
       o_O   => s_ALU_A
     );
 
@@ -571,7 +571,6 @@ begin
     generic map(N => N)
     port map(i_S  => c_ALUSrcA_EX,
              i_D0 => s_ALU_A,
-            --  i_D0 => s_RD0_EX,
              i_D1 => (s_PC_EX or x"00400000"),
              i_D2 => x"00000000",
              i_D3 => x"00000000",
@@ -583,7 +582,7 @@ begin
   mux_alu_b_fw : mux2t1_N
     generic map(N => N)
     port map(
-      i_S   => c_FW_RegData1,
+      i_S   => c_FW_RegData2,
       i_D0  => s_RD1_EX,
       i_D1  => s_RegWrData_MEM,
       o_O   => s_ALU_B
@@ -593,7 +592,6 @@ begin
     generic map(N => N)
     port map(i_S  => c_ALUSrcB_EX,
              i_D0 => s_ALU_B,
-            --  i_D0 => s_RD1_EX,
              i_D1 => s_Imm_EX,
              i_D2 => x"00000004",
              i_D3 => s_ImmU_EX,
