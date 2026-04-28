@@ -54,10 +54,10 @@ architecture structural of pc_reg is
         );
     end component;
 
+    signal s_PC_base    : std_logic_vector(DATA_WIDTH - 1 downto 0);
     signal s_PC         : std_logic_vector(DATA_WIDTH - 1 downto 0);
     signal s_PC_next    : std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal s_PC_base    : std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal s_PC_sum     : std_logic_vector(DATA_WIDTH - 1 downto 0);
+    signal s_PC_reg     : std_logic_vector(DATA_WIDTH - 1 downto 0);
     signal s_4_Imm      : std_logic_vector(DATA_WIDTH - 1 downto 0);
 
     begin
@@ -70,9 +70,21 @@ architecture structural of pc_reg is
             o_Q     => s_PC
         );
 
-        s_PC_base <= i_Reg1Data when i_Branch = "10" else
-                     i_PC_EX when i_Branch = "11" or i_Branch = "01" else
-                     s_PC;
+        mux_pc_reg : mux2t1_N
+        port map(
+            i_S     => i_Branch(1) and i_Branch(0),
+            i_D0    => s_PC,
+            i_D1    => i_Reg1Data,
+            o_O     => s_PC_reg
+        );
+
+        mux_pc_ex : mux2t1_N
+        port map(
+            i_S     => i_Branch(1),
+            i_D0    => s_PC_reg,
+            i_D1    => i_PC_EX,
+            o_O     => s_PC_base
+        );
 
         mux_4_Imm : mux2t1_N
         port map(
@@ -87,12 +99,9 @@ architecture structural of pc_reg is
             i_A     => s_PC_base,
             i_B     => s_4_Imm,
             i_Cin   => '0',
-            o_Sum   => s_PC_sum,
+            o_Sum   => s_PC_next,
             o_Cout  => open
         );
-
-        s_PC_next <= s_PC_sum when i_Branch /= "10" else
-                      s_PC_sum(DATA_WIDTH-1 downto 1) & '0';
 
         o_PC <= s_PC;
 end structural;
