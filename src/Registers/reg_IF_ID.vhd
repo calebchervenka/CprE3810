@@ -57,6 +57,16 @@
 --         );
 --     end component;
 
+--         component mux2t1_N is 
+--         generic(N : integer);
+--         port(
+--             i_S : in std_logic;
+--             i_D0 : in std_logic_vector(N-1 downto 0);
+--             i_D1 : in std_logic_vector(N-1 downto 0);
+--             o_O : out std_logic_vector(N-1 downto 0)
+--         );
+--     end component;
+
 
 --     ------------
 --     -- Signals
@@ -64,6 +74,7 @@
 --     signal s_WE        : std_logic; -- write enable
 --     signal s_RST       : std_logic; -- reset signal
 --     signal s_not_stall : std_logic; -- inverted stall
+--     signal s_inst_stall : std_logic_vector(N-1 downto 0); -- output of stall mux, input to flush mux
 
 
 
@@ -88,26 +99,30 @@
 --         o_F => s_WE
 --     );
 
---     -- FLUSHING
---     -- if RST OR flush is enabled, reset the pipeline register
---     or_gate : orgate2
---     port map(
---         i_A => i_RST,
---         i_B => i_flush,
---         o_F => s_RST
---     );
 
 --     ---------------------------------
 --     -- PC and Instruction Registers
 --     ---------------------------------
 
---         reg_PC : reg_N
+--     mux_flush : mux2t1_N
+--     generic map(
+--         N => N
+--     )
+--     port map(
+--         i_S => i_flush,
+--         i_D0 => i_Inst, -- instruction from stall mux
+--         i_D1 => (others => '0'), -- NOP instruction
+--         o_O => s_inst_stall -- output to instruction register
+--     );
+
+
+--     reg_PC : reg_N
 --     generic map(
 --         N => N
 --     )
 --     port map(
 --         i_Clk   => i_CLK,
---         i_Rst   => s_RST,
+--         i_Rst   => i_RST,
 --         i_WE    => s_WE,
 --         i_D     => i_PC,
 --         o_Q     => o_PC
@@ -120,13 +135,15 @@
 --     )
 --     port map(
 --         i_Clk   => i_CLK,
---         i_Rst   => s_RST,
+--         i_Rst   => i_RST,
 --         i_WE    => s_WE,
---         i_D     => i_Inst,
+--         i_D     => s_inst_stall, -- resulting output from mux logic
 --         o_Q     => o_Inst
 --     );
 
 -- end structure;
+
+
 
 
 

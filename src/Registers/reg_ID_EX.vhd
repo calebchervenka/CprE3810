@@ -91,6 +91,9 @@
 --     signal s_WE        : std_logic; -- write enable
 --     signal s_RST       : std_logic; -- reset signal
 --     signal s_not_stall : std_logic; -- inverted stall
+--     signal s_inst_mux : std_logic_vector(N-1 downto 0); -- output of stall mux, input to flush mux
+--     signal s_RegWr_mux : std_logic; -- output of stall mux, input to flush mux
+--     signal s_MemToReg
 
 -- begin
 
@@ -126,6 +129,14 @@
 --     ----------------------------------------
 --     -- PC, Instruction, and other Registers/Control Signals
 --     -----------------------------------------
+
+--         mux_flush : mux2t1_N
+--     port map(
+--         i_S => i_flush,
+--         i_D0 => o_Inst, -- instruction from stall mux
+--         i_D1 => (others => '0'), -- NOP instruction
+--         o_O => o_Inst -- output to instruction register
+--     );
 
 --     reg_PC : reg_N -- PC register
 --     generic map(
