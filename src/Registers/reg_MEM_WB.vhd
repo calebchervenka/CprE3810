@@ -33,8 +33,8 @@ entity reg_MEM_WB is
         --  o_Branch     : out std_logic_vector(1 downto 0);
         --  i_Branch_Cd  : in std_logic;
         --  o_Branch_Cd  : out std_logic;
-        --  i_ALUResult  : in std_logic_vector(N-1 downto 0);
-        --  o_ALUResult  : out std_logic_vector(N-1 downto 0);
+         i_ALUResult  : in std_logic_vector(N-1 downto 0);
+         o_ALUResult  : out std_logic_vector(N-1 downto 0);
         --  i_LoadData   : in std_logic_vector(N-1 downto 0);
         --  o_LoadData   : out std_logic_vector(N-1 downto 0);
          i_RegWr      : in std_logic;
@@ -101,17 +101,17 @@ begin
         o_Q(0)  => o_DMemWr
     );
 
-    -- reg_ALUResult : reg_N
-    -- generic map(
-    --     N => N
-    -- )
-    -- port map(
-    --     i_Clk   => i_Clk,
-    --     i_Rst   => i_Rst,
-    --     i_WE    => '1',
-    --     i_D     => i_ALUResult,
-    --     o_Q     => o_ALUResult
-    -- );
+    reg_ALUResult : reg_N
+    generic map(
+        N => N
+    )
+    port map(
+        i_Clk   => i_Clk,
+        i_Rst   => i_Rst,
+        i_WE    => '1',
+        i_D     => i_ALUResult,
+        o_Q     => o_ALUResult
+    );
 
     -- reg_LoadData : reg_N
     -- generic map(

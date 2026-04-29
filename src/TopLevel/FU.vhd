@@ -15,8 +15,11 @@ entity FU is
         i_rd_MEM        : in std_logic_vector(4 downto 0);
         i_rd_WB         : in std_logic_vector(4 downto 0);
         o_FW_DMemData   : out std_logic;
-        o_FW_RegData1   : out std_logic;
-        o_FW_RegData2   : out std_logic
+
+        o_Fwd_Rd1_from_mem : out std_logic;
+        o_Fwd_Rd1_from_wb  : out std_logic;
+        o_Fwd_Rd2_from_mem : out std_logic;
+        o_Fwd_Rd2_from_wb  : out std_logic
     );
 end FU;
 
@@ -32,20 +35,22 @@ begin
     -- Protects against add/addi immediately before lw
     o_FW_DMemData <= '1' when (s_opcode_MEM = "0100011") and (s_opcode_WB(4 downto 0) = "10011") and (i_rs2_MEM = i_rd_WB) else '0';
 
-
-    -- Protects against add/addi immediately before R-type instruction
-    -- o_FW_RegData1 <= '0';
-    o_FW_RegData1 <= '1' when
+    o_Fwd_Rd1_from_mem <= '1' when
         ((i_rs1_EX = i_rd_MEM) and not (i_rd_MEM = "00000"))
-        -- ((i_rs1_EX = i_rd_WB) and not (i_rd_WB = "00000"))
+        -- or ((s_opcode_MEM = "0110111") and (s_opcode_ex = "0100011") and (i_rs1_ex = i_rd_mem) and not (i_rd_mem = "00000"))
+    else '0';
+
+    o_Fwd_Rd1_from_wb <= '1' when
+        ((i_rs1_EX = i_rd_WB) and not (i_rd_WB = "00000"))
     else '0';
 
     -- o_FW_RegData2 <= '0';
-    o_FW_RegData2 <= '1' when 
+    o_Fwd_Rd2_from_mem <= '1' when 
         (i_rs2_EX = i_rd_MEM) and
-        -- (write to register) and
         not (i_rd_MEM = "00000")
     else '0';
+
+    o_Fwd_Rd2_from_wb <= '0';
 
     -----------------
     -- Look at:

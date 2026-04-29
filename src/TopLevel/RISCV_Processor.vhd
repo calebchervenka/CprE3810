@@ -134,8 +134,13 @@ architecture structure of RISCV_Processor is
 
   -- Forwarding Controls
   signal c_FW_DMemData : std_logic;
-  signal c_FW_RegData1 : std_logic;
-  signal c_FW_RegData2 : std_logic;
+  -- signal c_FW_RegData1 : std_logic;
+  -- signal c_FW_RegData2 : std_logic;
+
+  signal c_Fwd_Rd1_from_mem : std_logic;
+  signal c_Fwd_Rd1_from_wb  : std_logic;
+  signal c_Fwd_Rd2_from_mem : std_logic;
+  signal c_Fwd_Rd2_from_wb  : std_logic;
 
   
   -- Control signals
@@ -360,8 +365,8 @@ architecture structure of RISCV_Processor is
         --  o_Branch     : out std_logic_vector(1 downto 0);
         --  i_Branch_Cd  : in std_logic;
         --  o_Branch_Cd  : out std_logic;
-        --  i_ALUResult  : in std_logic_vector(N-1 downto 0);
-        --  o_ALUResult  : out std_logic_vector(N-1 downto 0);
+         i_ALUResult  : in std_logic_vector(N-1 downto 0);
+         o_ALUResult  : out std_logic_vector(N-1 downto 0);
         --  i_LoadData   : in std_logic_vector(N-1 downto 0);
         --  o_LoadData   : out std_logic_vector(N-1 downto 0);
          i_RegWr      : in std_logic;
@@ -426,8 +431,10 @@ architecture structure of RISCV_Processor is
         i_rd_MEM      : in std_logic_vector(4 downto 0);
         i_rd_WB       : in std_logic_vector(4 downto 0);
         o_FW_DMemData : out std_logic;
-        o_FW_RegData1 : out std_logic;
-        o_FW_RegData2 : out std_logic
+        o_Fwd_Rd1_from_mem : out std_logic;
+        o_Fwd_Rd1_from_wb  : out std_logic;
+        o_Fwd_Rd2_from_mem : out std_logic;
+        o_Fwd_Rd2_from_wb  : out std_logic
     );
     end component;
 
@@ -558,12 +565,14 @@ begin
   --  EXECUTE
   -------------------------------
 
-  mux_alu_a_fw : mux2t1_N
+  mux_alu_a_fw : mux4t1_N
     generic map(N => N)
     port map(
-      i_S   => c_FW_RegData1,
+      i_S   => c_Fwd_Rd1_from_wb & c_Fwd_Rd1_from_mem,
       i_D0  => s_RD0_EX,
       i_D1  => s_ALUResult_MEM,
+      i_D2  => s_ALUResult_WB,
+      i_D3  => s_ALUResult_WB,
       o_O   => s_ALU_A
     );
 
@@ -579,12 +588,14 @@ begin
   s_ImmU_EX(31 downto 12) <= s_Imm_EX(19 downto 0);
   s_ImmU_EX(11 downto 0) <= (others => '0');
 
-  mux_alu_b_fw : mux2t1_N
+  mux_alu_b_fw : mux4t1_N
     generic map(N => N)
     port map(
-      i_S   => c_FW_RegData2,
+      i_S   => c_Fwd_Rd2_from_wb & c_Fwd_Rd2_from_mem,
       i_D0  => s_RD1_EX,
       i_D1  => s_RegWrData_MEM,
+      i_D2  => s_ALUResult_WB,
+      i_D3  => s_ALUResult_WB,
       o_O   => s_ALU_B
     );
 
@@ -636,8 +647,10 @@ begin
       i_rd_mem      => s_Inst_Mem(11 downto 7),
       i_rd_wb       => s_Inst_WB(11 downto 7),
       o_fw_dmemdata => c_FW_DMemData,
-      o_FW_RegData1 => c_FW_RegData1,
-      o_FW_RegData2 => c_FW_RegData2
+      o_Fwd_Rd1_from_mem  => c_Fwd_Rd1_from_mem,
+      o_Fwd_Rd1_from_wb   => c_Fwd_Rd1_from_wb,
+      o_Fwd_Rd2_from_mem  => c_Fwd_Rd2_from_mem,
+      o_Fwd_Rd2_from_wb   => c_Fwd_Rd2_from_wb
     );
 
 
@@ -651,6 +664,7 @@ begin
       i_S  => c_FW_DMemData,
       i_D0 => s_DMemData_MEM,
       i_D1 => s_RegWrData_WB,
+      -- i_D1 => s_ALUResult_WB,
       o_O  => s_DMemData
     );
 
@@ -691,7 +705,7 @@ begin
       i_Inst  =>  s_Inst_MEM,           o_Inst  => s_Inst_WB,
       i_DMemData  => s_DMemData_MEM, o_DMemData => s_DMemData_WB,
       i_DMemWr => s_DMemWr_MEM, o_DMemWr => s_DMemWr_WB,
-      -- i_ALUResult =>  s_ALUResult_MEM,  o_ALUResult =>  s_ALUResult_WB,
+      i_ALUResult =>  s_ALUResult_MEM,  o_ALUResult =>  s_ALUResult_WB,
       -- i_LoadData  =>  s_LoadData_MEM,   o_LoadData  =>  s_LoadData_WB,
       -- i_MemToReg  =>  c_MemToReg_MEM,   o_MemToReg  =>  c_MemToReg_WB,
       i_RegWr => c_RegWr_MEM, o_RegWr => c_RegWr_WB,
