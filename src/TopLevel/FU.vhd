@@ -34,19 +34,33 @@ begin
 
 
     -- Protects against add/addi immediately before R-type instruction
+    -- o_FW_RegData1 <= '0';
     o_FW_RegData1 <= '1' when
-        (s_opcode_EX(4 downto 0) = "10011") and
-        (s_opcode_MEM(4 downto 0) = "10011") and
-        (i_rs1_EX = i_rd_MEM) and
+        ((i_rs1_EX = i_rd_MEM) and not (i_rd_MEM = "00000"))
+        -- ((i_rs1_EX = i_rd_WB) and not (i_rd_WB = "00000"))
+    else '0';
+
+    -- o_FW_RegData2 <= '0';
+    o_FW_RegData2 <= '1' when 
+        (i_rs2_EX = i_rd_MEM) and
+        -- (write to register) and
         not (i_rd_MEM = "00000")
     else '0';
 
-    o_FW_RegData2 <= '1' when 
-        (s_opcode_EX(4 downto 0) = "10011") and 
-        (s_opcode_MEM(4 downto 0) = "10011") and 
-        (i_rs2_EX = i_rd_MEM) and
-        not (i_rd_MEM = "00000")
-    else '0';
+    -----------------
+    -- Look at:
+    --  1.  lui rX, imm
+    --      sw  rs1, offset(rX)
+    --
+    --  2.  add rX, rs1, rs2
+    --      blt rX, rY, label
+    --
+    --  3.  lw rX, offset(rs1)
+    --      add rd, rX, rY
+    --
+    --
+    --
+    -----------------
     
 
 end structure;
