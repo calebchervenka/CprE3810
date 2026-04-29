@@ -7,11 +7,10 @@
 
 _start:
     lui a0, 0x10010
-    nop
-    nop
-    nop
     sw x0, 0(a0)           # Zero-init array entries for sum accumulation
     sw x0, 4(a0)
+    # Stall should be inserted, simulated with NOP
+    nop
     sw x0, 8(a0)
     sw x0, 12(a0)
     li a1, 0
@@ -22,13 +21,12 @@ _start:
 
 loop:
     lw t0, 0(a0)
-    nop
-    nop
     add a1, a1, t0
     addi a0, a0, 4
     addi t3, t3, 1
     add t4, t3, zero
     blt t4, t2, loop
+    # Instructions should be flushed, simulated with NOPs
     nop
     nop
     nop
