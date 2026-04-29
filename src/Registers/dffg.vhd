@@ -52,7 +52,7 @@ begin
   begin
     if (i_RST = '1') then
       s_Q <= '0'; -- Use "(others => '0')" for N-bit values
-    elsif (rising_edge(i_CLK)) then
+    elsif (falling_edge(i_CLK)) then
       s_Q <= s_D;
     end if;
 
