@@ -425,11 +425,6 @@ architecture structure of RISCV_Processor is
         i_inst_EX     : in std_logic_vector(31 downto 0);
         i_inst_MEM    : in std_logic_vector(31 downto 0);
         i_inst_WB     : in std_logic_vector(31 downto 0);
-        i_rs1_EX      : in std_logic_vector(4 downto 0);
-        i_rs2_EX      : in std_logic_vector(4 downto 0);
-        i_rs2_MEM     : in std_logic_vector(4 downto 0);
-        i_rd_MEM      : in std_logic_vector(4 downto 0);
-        i_rd_WB       : in std_logic_vector(4 downto 0);
         o_FW_DMemData : out std_logic;
         o_Fwd_Rd1_from_mem : out std_logic;
         o_Fwd_Rd1_from_wb  : out std_logic;
@@ -641,11 +636,6 @@ begin
       i_inst_ex     => s_Inst_EX,
       i_inst_mem    => s_Inst_MEM,
       i_inst_wb     => s_Inst_WB,
-      i_rs1_ex      => s_Inst_EX(19 downto 15),
-      i_rs2_EX      => s_Inst_EX(24 downto 20),
-      i_rs2_mem     => s_Inst_MEM(24 downto 20),
-      i_rd_mem      => s_Inst_Mem(11 downto 7),
-      i_rd_wb       => s_Inst_WB(11 downto 7),
       o_fw_dmemdata => c_FW_DMemData,
       o_Fwd_Rd1_from_mem  => c_Fwd_Rd1_from_mem,
       o_Fwd_Rd1_from_wb   => c_Fwd_Rd1_from_wb,
