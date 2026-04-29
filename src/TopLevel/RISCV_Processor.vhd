@@ -132,15 +132,22 @@ architecture structure of RISCV_Processor is
   signal c_RegWr_WB     : std_logic;
   signal c_Halt_WB     : std_logic;
 
-  -- Forwarding Controls
+  -- Hazard Controls
   signal c_FW_DMemData : std_logic;
-  -- signal c_FW_RegData1 : std_logic;
-  -- signal c_FW_RegData2 : std_logic;
-
   signal c_Fwd_Rd1_from_mem : std_logic;
-  signal c_Fwd_Rd1_from_wb  : std_logic;
+  signal c_Fwd_Rd1_from_wb : std_logic;
   signal c_Fwd_Rd2_from_mem : std_logic;
-  signal c_Fwd_Rd2_from_wb  : std_logic;
+  signal c_Fwd_Rd2_from_wb : std_logic;
+  
+  signal c_PC_WE : std_logic;
+  signal c_IF_ID_WE : std_logic;
+  signal c_ID_EX_WE : std_logic;
+  signal c_EX_MEM_WE : std_logic;
+  signal c_MEM_WB_WE : std_logic;
+  signal c_IF_ID_Rst : std_logic;
+  signal c_ID_EX_Rst : std_logic;
+  signal c_EX_MEM_Rst : std_logic;
+  signal c_MEM_WB_Rst : std_logic;
 
   
   -- Control signals
@@ -194,12 +201,13 @@ architecture structure of RISCV_Processor is
   component pc_reg is
     generic(DATA_WIDTH : integer);
     port(
+      i_Clk : in std_logic;
+      i_Rst : in std_logic;
+      i_WE : in std_logic;
       i_Branch : in std_logic_vector(1 downto 0);
       i_BranchCondition : in std_logic;
       i_Imm  : in std_logic_vector(DATA_WIDTH-1 downto 0);
       i_Reg1Data  : in std_logic_vector(DATA_WIDTH-1 downto 0);
-      i_Rst     : in std_logic;
-      i_Clk     : in std_logic;
       i_PC_EX : in std_logic_vector(DATA_WIDTH - 1 downto 0);
       o_PC      : out std_logic_vector(DATA_WIDTH-1 downto 0));
   end component;
@@ -433,6 +441,29 @@ architecture structure of RISCV_Processor is
     );
     end component;
 
+  component hazard_control_unit is
+    generic(DATA_WIDTH : integer);
+    port(
+        i_CLK : in std_logic;
+        i_RST : in std_logic;
+        i_Inst_ID : in std_logic_vector(DATA_WIDTH-1 downto 0);
+        i_Inst_EX : in std_logic_vector(DATA_WIDTH-1 downto 0);
+        i_Inst_MEM : in std_logic_vector(DATA_WIDTH-1 downto 0);
+        i_Inst_WB : in std_logic_vector(DATA_WIDTH-1 downto 0);
+        o_PC_WE : out std_logic;
+        o_IF_ID_WE : out std_logic;
+        o_ID_EX_WE : out std_logic;
+        o_EX_MEM_WE : out std_logic;
+        o_MEM_WB_WE : out std_logic;
+        o_IF_ID_Rst : out std_logic;
+        o_ID_EX_Rst : out std_logic;
+        o_EX_MEM_Rst : out std_logic;
+        o_MEM_WB_Rst : out std_logic;
+        i_reg_write_enable_EX : in std_logic;
+        i_mem_to_reg_EX : in std_logic
+    );
+  end component;
+
 begin
   s_Ovfl <= '0';
 
@@ -448,14 +479,15 @@ begin
   PCReg : pc_reg
     generic map(DATA_WIDTH => N)
     port map(
-      i_Branch    => c_Branch_EX,
+      i_Clk => iClk,
+      i_Rst => iRst,
+      i_WE => c_PC_WE,
+      i_Branch => c_Branch_EX,
       i_BranchCondition => s_ALUResult_EX(0),
-      i_Imm       => s_Imm_EX,
-      i_Reg1Data  => s_RD0_EX,
-      i_Rst     => iRst,
-      i_Clk     => iClk,
-      i_PC_EX   => s_PC_EX,
-      o_PC      => s_PC_IF);
+      i_Imm => s_Imm_EX,
+      i_Reg1Data => s_RD0_EX,
+      i_PC_EX => s_PC_EX,
+      o_PC => s_PC_IF);
 
   IMem : mem
     generic map(ADDR_WIDTH => ADDR_WIDTH,
@@ -470,8 +502,8 @@ begin
     generic map(N => DATA_WIDTH)
     port map(
       i_Clk   => iClk,
-      i_Rst   => iRst,
-      i_LD    => '1',
+      i_Rst   => c_IF_ID_Rst,
+      i_LD    => c_IF_ID_WE,
       i_PC    => s_PC_IF,
       i_Inst  => s_Inst_IF,
       o_PC    => s_PC_ID,
@@ -533,8 +565,8 @@ begin
     generic map(N   => DATA_WIDTH)
     port map(
       i_Clk   =>  iClk,
-      i_Rst   =>  iRst,
-      i_LD    =>  '1',
+      i_Rst   =>  c_ID_EX_Rst,
+      i_LD    =>  c_ID_EX_WE,
       i_PC    =>  s_PC_ID,
       o_PC    =>  s_PC_EX,
 
@@ -617,8 +649,8 @@ begin
     generic map(N => DATA_WIDTH)
     port map(
       i_Clk   =>  iClk,
-      i_Rst   =>  iRst,
-      i_LD    =>  '1',
+      i_Rst   =>  c_EX_MEM_Rst,
+      i_LD    =>  c_EX_MEM_WE,
       i_PC    =>  s_PC_EX, o_PC    =>  s_PC_Mem,
       i_Inst => s_Inst_EX, o_Inst => s_Inst_MEM,
       i_DMemData  => s_DMemData_EX, o_DMemData => s_DMemData_MEM,
@@ -628,19 +660,6 @@ begin
       i_RegWr => c_RegWr_EX, o_RegWr => c_RegWr_MEM,
       i_MemToReg => c_MemToReg_EX, o_MemToReg => c_MemToReg_MEM,
       i_Halt => c_Halt_EX, o_Halt => c_Halt_MEM
-    );
-
-  forwarding_unit : FU
-    generic map(DATA_WIDTH => N)
-    port map(
-      i_inst_ex     => s_Inst_EX,
-      i_inst_mem    => s_Inst_MEM,
-      i_inst_wb     => s_Inst_WB,
-      o_fw_dmemdata => c_FW_DMemData,
-      o_Fwd_Rd1_from_mem  => c_Fwd_Rd1_from_mem,
-      o_Fwd_Rd1_from_wb   => c_Fwd_Rd1_from_wb,
-      o_Fwd_Rd2_from_mem  => c_Fwd_Rd2_from_mem,
-      o_Fwd_Rd2_from_wb   => c_Fwd_Rd2_from_wb
     );
 
 
@@ -689,8 +708,8 @@ begin
     generic map(N   => DATA_WIDTH)
     port map(
       i_Clk   =>  iClk,
-      i_Rst   =>  iRst,
-      i_LD    =>  '1',
+      i_Rst   =>  c_MEM_WB_Rst,
+      i_LD    =>  c_MEM_WB_WE,
       -- i_PC    =>  s_PC_MEM,             o_PC    => s_PC_WB,
       i_Inst  =>  s_Inst_MEM,           o_Inst  => s_Inst_WB,
       i_DMemData  => s_DMemData_MEM, o_DMemData => s_DMemData_WB,
@@ -713,6 +732,47 @@ begin
 
   s_RegWrData <= s_RegWrData_WB;
   s_Halt <= c_Halt_WB;
+
+
+  ---------------------------------------
+  --  HAZARD DETECTION AND FORWARDING
+  ---------------------------------------
+
+  forwarding_unit : FU
+    generic map(DATA_WIDTH => N)
+    port map(
+      i_inst_ex     => s_Inst_EX,
+      i_inst_mem    => s_Inst_MEM,
+      i_inst_wb     => s_Inst_WB,
+      o_fw_dmemdata => c_FW_DMemData,
+      o_Fwd_Rd1_from_mem  => c_Fwd_Rd1_from_mem,
+      o_Fwd_Rd1_from_wb   => c_Fwd_Rd1_from_wb,
+      o_Fwd_Rd2_from_mem  => c_Fwd_Rd2_from_mem,
+      o_Fwd_Rd2_from_wb   => c_Fwd_Rd2_from_wb
+    );
+  
+  hcu : hazard_control_unit
+    generic map(DATA_WIDTH => N)
+    port map(
+      i_Clk => iClk,
+      i_Rst => iRst,
+      i_Inst_ID => s_Inst_ID,
+      i_Inst_EX => s_Inst_EX,
+      i_Inst_MEM => s_Inst_MEM,
+      i_Inst_WB => s_Inst_WB,
+      o_PC_WE => c_PC_WE,
+      o_IF_ID_WE => c_IF_ID_WE,
+      o_ID_EX_WE => c_ID_EX_WE,
+      o_EX_MEM_WE => c_EX_MEM_WE,
+      o_MEM_WB_WE => c_MEM_WB_WE,
+      o_IF_ID_Rst => c_IF_ID_Rst,
+      o_ID_EX_Rst => c_ID_EX_Rst,
+      o_EX_MEM_Rst => c_EX_MEM_Rst,
+      o_MEM_WB_Rst => c_MEM_WB_Rst,
+      i_reg_write_enable_EX => c_RegWr_EX,
+      i_mem_to_reg_EX => c_MemToReg_EX
+    );
+
 
 end structure;
 

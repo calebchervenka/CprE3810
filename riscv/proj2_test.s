@@ -21,8 +21,8 @@ _start:
 
 loop:
     lw t0, 0(a0)
-    add a1, a1, t0
     addi a0, a0, 4
+    add a1, a1, t0
     addi t3, t3, 1
     add t4, t3, zero
     blt t4, t2, loop

@@ -10,12 +10,13 @@ entity pc_reg is
         DATA_WIDTH  : integer := 32
     );
     port(
+        i_Clk : in std_logic;
+        i_Rst : in std_logic;
+        i_WE : in std_logic;
         i_Branch : in std_logic_vector(1 downto 0);
         i_BranchCondition : std_logic;
         i_Imm   : in std_logic_vector(DATA_WIDTH - 1 downto 0);
         i_Reg1Data : in std_logic_vector(DATA_WIDTH - 1 downto 0);
-        i_Rst : in std_logic;
-        i_Clk : in std_logic;
         i_PC_EX : in std_logic_vector(DATA_WIDTH - 1 downto 0);
         o_PC    : out std_logic_vector(DATA_WIDTH - 1 downto 0)
     );
@@ -66,7 +67,7 @@ architecture structural of pc_reg is
             i_Clk   => i_Clk,
             i_Rst   => i_Rst,
             i_D     => s_PC_next,
-            i_WE    => '1',
+            i_WE    => i_WE,
             o_Q     => s_PC
         );
 
