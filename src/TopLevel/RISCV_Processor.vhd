@@ -477,7 +477,7 @@ begin
       i_Rst   => iRst,
       i_LD    => '1',
       i_stall => '0',
-      i_flush => '0',
+      i_flush => s_ALUResult_EX(0), -- changed this
       i_PC    => s_PC_IF,
       i_Inst  => s_Inst_IF,
       o_PC    => s_PC_ID,
@@ -542,7 +542,7 @@ begin
       i_Rst   =>  iRst,
       i_LD    =>  '1',
       i_stall =>  '0',
-      i_flush =>  '0',
+      i_flush =>  s_ALUResult_EX(0), --- changed from
       i_PC    =>  s_PC_ID,
       o_PC    =>  s_PC_EX,
 

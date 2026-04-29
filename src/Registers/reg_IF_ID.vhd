@@ -110,7 +110,7 @@
 --     )
 --     port map(
 --         i_S => i_flush,
---         i_D0 => i_Inst, -- instruction from stall mux
+--         i_D0 => i_Inst,
 --         i_D1 => (others => '0'), -- NOP instruction
 --         o_O => s_inst_stall -- output to instruction register
 --     );
@@ -150,8 +150,21 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 --------------------------------
--- OLD WORKING VERSION
+-- OLD VERSION
 --------------------------------
 
 library IEEE;

@@ -85,6 +85,16 @@
 --         );
 --     end component;
 
+--     component mux2t1_N is 
+--         generic(N : integer);
+--         port(
+--             i_S : in std_logic;
+--             i_D0 : in std_logic_vector(N-1 downto 0);
+--             i_D1 : in std_logic_vector(N-1 downto 0);
+--             o_O : out std_logic_vector(N-1 downto 0)
+--         );  
+--     end component;    
+
 --     ------------
 --     -- Signals
 --     ------------
@@ -93,7 +103,8 @@
 --     signal s_not_stall : std_logic; -- inverted stall
 --     signal s_inst_mux : std_logic_vector(N-1 downto 0); -- output of stall mux, input to flush mux
 --     signal s_RegWr_mux : std_logic; -- output of stall mux, input to flush mux
---     signal s_MemToReg
+--     signal s_MemToReg : std_logic;
+--     signal s_inst_stall : std_logic_vector(N-1 downto 0); -- output of stall mux, input to flush mux
 
 -- begin
 
@@ -125,17 +136,22 @@
 --         o_F => s_RST
 --     );
 
+    
+
 
 --     ----------------------------------------
---     -- PC, Instruction, and other Registers/Control Signals
+--     -- PC, Instruction, and other Registers
 --     -----------------------------------------
 
---         mux_flush : mux2t1_N
+--     mux_flush : mux2t1_N
+--     generic map(
+--         N => N
+--     )
 --     port map(
 --         i_S => i_flush,
---         i_D0 => o_Inst, -- instruction from stall mux
+--         i_D0 => i_Inst, -- instruction from stall mux
 --         i_D1 => (others => '0'), -- NOP instruction
---         o_O => o_Inst -- output to instruction register
+--         o_O => s_inst_stall -- output to instruction register
 --     );
 
 --     reg_PC : reg_N -- PC register
@@ -144,7 +160,7 @@
 --     )
 --     port map(
 --         i_Clk   => i_Clk,
---         i_Rst   => s_RST,
+--         i_Rst   => i_RST,
 --         i_WE    => s_WE,
 --         i_D     => i_PC,
 --         o_Q     => o_PC
@@ -156,7 +172,7 @@
 --     )
 --     port map(
 --         i_Clk   => i_Clk,
---         i_Rst   => s_RST,
+--         i_Rst   => i_RST,
 --         i_WE    => s_WE,
 --         i_D     => i_Inst,
 --         o_Q     => o_Inst
@@ -168,7 +184,7 @@
 --     )
 --     port map(
 --         i_Clk   => i_Clk,
---         i_Rst   => s_RST,
+--         i_Rst   => i_RST,
 --         i_WE    => s_WE,
 --         i_D     => i_imm,
 --         o_Q     => o_imm
@@ -180,7 +196,7 @@
 --     )
 --     port map(
 --         i_Clk   => i_Clk,
---         i_Rst   => s_RST,
+--         i_Rst   => i_RST,
 --         i_WE    => s_WE,
 --         i_D     => i_RD0,
 --         o_Q     => o_RD0
@@ -192,7 +208,7 @@
 --     )
 --     port map(
 --         i_Clk   => i_Clk,
---         i_Rst   => s_RST,
+--         i_Rst   => i_RST,
 --         i_WE    => s_WE,
 --         i_D     => i_RD1,
 --         o_Q     => o_RD1
@@ -204,22 +220,10 @@
 --     )
 --     port map(
 --         i_Clk   => i_Clk,
---         i_Rst   => s_RST,
+--         i_Rst   => i_RST,
 --         i_WE    => s_WE,
 --         i_D     => i_DMemData,
 --         o_Q     => o_DMemData
---     );
-
---     reg_DMemWr : reg_N
---     generic map(
---         N => 1
---     )
---     port map(
---         i_Clk   => i_Clk,
---         i_Rst   => s_RST,
---         i_WE    => s_WE,
---         i_D(0)  => i_DMemWr,
---         o_Q(0)  => o_DMemWr
 --     );
 
 --     reg_ALUSrcA : reg_N
@@ -228,7 +232,7 @@
 --     )
 --     port map(
 --         i_Clk   => i_Clk,
---         i_Rst   => s_RST,
+--         i_Rst   => i_RST,
 --         i_WE    => s_WE,
 --         i_D     => i_ALUSrcA,
 --         o_Q     => o_ALUSrcA
@@ -240,7 +244,7 @@
 --     )
 --     port map(
 --         i_Clk   => i_Clk,
---         i_Rst   => s_RST,
+--         i_Rst   => i_RST,
 --         i_WE    => s_WE,
 --         i_D     => i_ALUSrcB,
 --         o_Q     => o_ALUSrcB
@@ -252,7 +256,7 @@
 --     )
 --     port map(
 --         i_Clk   => i_Clk,
---         i_Rst   => s_RST,
+--         i_Rst   => i_RST,
 --         i_WE    => s_WE,
 --         i_D     => i_ALUCtrl,
 --         o_Q     => o_ALUCtrl
@@ -264,13 +268,18 @@
 --     )
 --     port map(
 --         i_Clk   => i_Clk,
---         i_Rst   => s_RST,
+--         i_Rst   => i_RST,
 --         i_WE    => s_WE,
 --         i_D     => i_Branch,
 --         o_Q     => o_Branch
 --     );
 
---     reg_Branch_Cd : reg_N
+
+--     --------------------
+--     -- Control Signals
+--     --------------------
+
+--         reg_DMemWr : reg_N
 --     generic map(
 --         N => 1
 --     )
@@ -278,11 +287,11 @@
 --         i_Clk   => i_Clk,
 --         i_Rst   => s_RST,
 --         i_WE    => s_WE,
---         i_D(0)  => i_Branch_Cd,
---         o_Q(0)  => o_Branch_Cd
+--         i_D(0)  => i_DMemWr,
+--         o_Q(0)  => o_DMemWr
 --     );
 
---     reg_RegWr : reg_N
+--         reg_RegWr : reg_N
 --     generic map(
 --         N => 1
 --     )
@@ -318,6 +327,19 @@
 --         o_Q(0)  => o_Halt
 --     );
 
+
+--     reg_Branch_Cd : reg_N
+--     generic map(
+--         N => 1
+--     )
+--     port map(
+--         i_Clk   => i_Clk,
+--         i_Rst   => s_RST,
+--         i_WE    => s_WE,
+--         i_D(0)  => i_Branch_Cd,
+--         o_Q(0)  => o_Branch_Cd
+--     );
+
 -- end structure;
 
 
@@ -332,8 +354,19 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 --------------------------------
--- OLD WORKING VERSION
+-- OLD VERSION
 --------------------------------
 
 library IEEE;
@@ -579,7 +612,7 @@ begin
         i_D1(0) => '0', -- flush turns off Branch_Cd
         o_O(0) => s_Branch_Cd_stall_final
     );
-    
+
     ---------------------------------------
     -- PC Logic for Stalling and Flushing
     ----------------------------------------

@@ -41,7 +41,7 @@ architecture structural of reg_file is
         );
     end component;
 
-    component reg_N is
+    component reg_neg_N is -- changed here
         generic(N : integer);
         port(
             i_CLK   : in std_logic; -- Clock input
@@ -79,7 +79,7 @@ begin
 
     s_reg_d(0) <= (others => '0');
     c_reg_N : for i in 32-1 downto 1 generate
-        c_reg_I : reg_N
+        c_reg_I : reg_neg_N
         generic map (N => reg_count)
         port map(
             i_CLK   => i_CLK,
