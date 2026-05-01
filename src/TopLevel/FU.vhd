@@ -28,6 +28,8 @@ architecture structure of FU is
     signal s_rs2_MEM    : std_logic_vector(4 downto 0);
     signal s_rd_MEM     : std_logic_vector(4 downto 0);
     signal s_rd_WB      : std_logic_vector(4 downto 0);
+    signal s_RegWr_MEM  : std_logic;
+    signal s_RegWr_WB   : std_logic;
 
 begin
     s_opcode_EX <= i_inst_EX(6 downto 0);
@@ -40,26 +42,56 @@ begin
     s_rd_MEM <= i_inst_MEM(11 downto 7);
     s_rd_WB <= i_inst_WB(11 downto 7);
 
-    o_FW_DMemData <= '1' when (s_opcode_WB(4 downto 0) = "10011") and (s_rs2_MEM = s_rd_WB) else '0';
+    s_RegWr_MEM <= '1' when
+        (s_opcode_MEM = "0110011") or  -- R-type ALU
+        (s_opcode_MEM = "0010011") or  -- I-type ALU
+        (s_opcode_MEM = "0000011") or  -- load
+        (s_opcode_MEM = "1101111") or  -- jal
+        (s_opcode_MEM = "1100111") or  -- jalr
+        (s_opcode_MEM = "0110111") or  -- lui
+        (s_opcode_MEM = "0010111")     -- auipc
+    else '0';
+
+    s_RegWr_WB <= '1' when
+        (s_opcode_WB = "0110011") or
+        (s_opcode_WB = "0010011") or
+        (s_opcode_WB = "0000011") or
+        (s_opcode_WB = "1101111") or
+        (s_opcode_WB = "1100111") or
+        (s_opcode_WB = "0110111") or
+        (s_opcode_WB = "0010111")
+    else '0';
+
+    o_FW_DMemData <= '1' when
+        (s_rs2_MEM = s_rd_WB) and
+        not (s_rd_WB = "00000") and
+        (s_RegWr_WB = '1')
+    else '0';
 
     o_Fwd_Rd1_from_mem <= '1' when
         ((s_rs1_EX = s_rd_MEM) and 
-        not (s_rd_MEM = "00000"))
+        not (s_rd_MEM = "00000")) and
+        (s_RegWr_MEM = '1')
     else '0';
 
     o_Fwd_Rd1_from_wb <= '1' when
         ((s_rs1_EX = s_rd_WB) and 
-        not (s_rd_WB = "00000"))
+        not (s_rd_WB = "00000")) and
+        (s_RegWr_WB = '1') and
+        not ((s_rs1_EX = s_rd_MEM) and not (s_rd_MEM = "00000") and (s_RegWr_MEM = '1'))
     else '0';
 
     o_Fwd_Rd2_from_mem <= '1' when 
         (s_rs2_EX = s_rd_MEM) and
-        not (s_rd_MEM = "00000")
+        not (s_rd_MEM = "00000") and
+        (s_RegWr_MEM = '1')
     else '0';
 
     o_Fwd_Rd2_from_wb <= '1' when
         ((s_rs2_EX = s_rd_WB) and 
-        not (s_rd_WB = "00000"))
+        not (s_rd_WB = "00000")) and
+        (s_RegWr_WB = '1') and
+        not ((s_rs2_EX = s_rd_MEM) and not (s_rd_MEM = "00000") and (s_RegWr_MEM = '1'))
     else '0';
     
 

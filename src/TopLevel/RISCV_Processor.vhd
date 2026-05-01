@@ -141,6 +141,10 @@ architecture structure of RISCV_Processor is
   signal c_Fwd_Rd1_from_wb  : std_logic;
   signal c_Fwd_Rd2_from_mem : std_logic;
   signal c_Fwd_Rd2_from_wb  : std_logic;
+  signal s_Flush_EX         : std_logic;
+  signal s_NotBranch0_EX    : std_logic;
+  signal s_CondBranch_EX    : std_logic;
+  signal s_TakenBranch_EX   : std_logic;
 
   
   -- Control signals
@@ -440,6 +444,25 @@ architecture structure of RISCV_Processor is
 begin
   s_Ovfl <= '0';
 
+  flush_not_branch0 : entity work.invg(dataflow)
+    port map(i_A => c_Branch_EX(0),
+             o_F => s_NotBranch0_EX);
+
+  flush_cond_branch : entity work.andg2(dataflow)
+    port map(i_A => c_Branch_EX(1),
+             i_B => s_NotBranch0_EX,
+             o_F => s_CondBranch_EX);
+
+  flush_taken_branch : entity work.andg2(dataflow)
+    port map(i_A => s_CondBranch_EX,
+             i_B => s_ALUResult_EX(0),
+             o_F => s_TakenBranch_EX);
+
+  flush_redirect : entity work.org2(dataflow)
+    port map(i_A => c_Branch_EX(0),
+             i_B => s_TakenBranch_EX,
+             o_F => s_Flush_EX);
+
   with iInstLd select
     s_IMemAddr <= s_PC_IF when '0',
       iInstAddr when others;
@@ -455,7 +478,7 @@ begin
       i_Branch    => c_Branch_EX,
       i_BranchCondition => s_ALUResult_EX(0),
       i_Imm       => s_Imm_EX,
-      i_Reg1Data  => s_RD0_EX,
+      i_Reg1Data  => s_ALU_A,
       i_Rst     => iRst,
       i_Clk     => iClk,
       i_PC_EX   => s_PC_EX,
@@ -476,8 +499,8 @@ begin
       i_Clk   => iClk,
       i_Rst   => iRst,
       i_LD    => '1',
-      i_stall => '0',
-      i_flush => s_ALUResult_EX(0), -- changed this
+      i_stall => c_Halt_WB,
+      i_flush => s_Flush_EX,
       i_PC    => s_PC_IF,
       i_Inst  => s_Inst_IF,
       o_PC    => s_PC_ID,
@@ -541,8 +564,8 @@ begin
       i_Clk   =>  iClk,
       i_Rst   =>  iRst,
       i_LD    =>  '1',
-      i_stall =>  '0',
-      i_flush =>  s_ALUResult_EX(0), --- changed from
+      i_stall =>  c_Halt_WB,
+      i_flush =>  s_Flush_EX,
       i_PC    =>  s_PC_ID,
       o_PC    =>  s_PC_EX,
 
@@ -573,9 +596,9 @@ begin
     port map(
       i_S   => c_Fwd_Rd1_from_wb & c_Fwd_Rd1_from_mem,
       i_D0  => s_RD0_EX,
-      i_D1  => s_ALUResult_MEM,
-      i_D2  => s_ALUResult_WB,
-      i_D3  => s_ALUResult_WB,
+      i_D1  => s_RegWrData_MEM,
+      i_D2  => s_RegWrData_WB,
+      i_D3  => s_RegWrData_MEM,
       o_O   => s_ALU_A
     );
 
@@ -597,8 +620,8 @@ begin
       i_S   => c_Fwd_Rd2_from_wb & c_Fwd_Rd2_from_mem,
       i_D0  => s_RD1_EX,
       i_D1  => s_RegWrData_MEM,
-      i_D2  => s_ALUResult_WB,
-      i_D3  => s_ALUResult_WB,
+      i_D2  => s_RegWrData_WB,
+      i_D3  => s_RegWrData_MEM,
       o_O   => s_ALU_B
     );
 
@@ -723,4 +746,3 @@ begin
   s_Halt <= c_Halt_WB;
 
 end structure;
-
