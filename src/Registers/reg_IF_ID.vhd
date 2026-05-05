@@ -52,6 +52,8 @@ architecture structure of reg_IF_ID is
     signal s_Inst_stall_final : std_logic_vector(N-1 downto 0); -- output of flush mux
     signal s_PC_stall         : std_logic_vector(N-1 downto 0);
     signal s_PC_stall_final   : std_logic_vector(N-1 downto 0);
+    signal s_Inst_Out         : std_logic_vector(N-1 downto 0);
+    signal s_PC_Out           : std_logic_vector(N-1 downto 0);
 
 
 begin
@@ -68,7 +70,7 @@ begin
     port map( 
         i_S => i_stall,
         i_D0 => i_Inst, -- new instruction
-        i_D1 => o_Inst, -- instruction from previous cycle
+        i_D1 => s_Inst_Out, -- instruction from previous cycle
         o_O => s_Inst_stall -- output to instruction register
     );
     
@@ -95,7 +97,7 @@ begin
     port map(
         i_S => i_stall,
         i_D0 => i_PC,
-        i_D1 => o_PC, -- PC from previous cycle
+        i_D1 => s_PC_Out, -- PC from previous cycle
         o_O => s_PC_stall
     );
 
@@ -123,7 +125,7 @@ begin
         i_Rst   => i_Rst,
         i_WE    => '1',
         i_D     => s_PC_stall_final, -- resulting output from mux logic
-        o_Q     => o_PC
+        o_Q     => s_PC_Out
     );
 
 
@@ -136,8 +138,11 @@ begin
         i_Rst   => i_Rst,
         i_WE    => '1',
         i_D     => s_Inst_stall_final, -- resulting output from mux logic
-        o_Q     => o_Inst
+        o_Q     => s_Inst_Out
     );
+
+    o_PC <= s_PC_Out;
+    o_Inst <= s_Inst_Out;
 
 end structure;
 

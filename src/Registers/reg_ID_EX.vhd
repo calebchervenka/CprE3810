@@ -93,6 +93,14 @@ architecture structure of reg_ID_EX is
     signal s_Branch_Cd_stall_final : std_logic;
     signal s_Branch_stall          : std_logic_vector(1 downto 0);
     signal s_Branch_stall_final    : std_logic_vector(1 downto 0);
+    signal s_Inst_Out             : std_logic_vector(N-1 downto 0);
+    signal s_PC_Out               : std_logic_vector(N-1 downto 0);
+    signal s_RegWr_Out            : std_logic;
+    signal s_MemToReg_Out         : std_logic;
+    signal s_DMemWr_Out           : std_logic;
+    signal s_Halt_Out             : std_logic;
+    signal s_Branch_Cd_Out        : std_logic;
+    signal s_Branch_Out           : std_logic_vector(1 downto 0);
 
 begin
 
@@ -108,7 +116,7 @@ begin
     port map(
         i_S => i_stall,
         i_D0 => i_Inst, -- new instruction
-        i_D1 => o_Inst, -- previous instruction
+        i_D1 => s_Inst_Out, -- previous instruction
         o_O => s_Inst_stall -- output to instruction register
     );
 
@@ -133,7 +141,7 @@ begin
     port map(
         i_S => i_stall,
         i_D0(0) => i_RegWr,
-        i_D1(0) => o_RegWr,
+        i_D1(0) => s_RegWr_Out,
         o_O(0) => s_RegWr_stall
     );
 
@@ -157,7 +165,7 @@ begin
     port map(
         i_S => i_stall,
         i_D0(0) => i_MemToReg,
-        i_D1(0) => o_MemToReg,
+        i_D1(0) => s_MemToReg_Out,
         o_O(0) => s_MemToReg_stall
     );
 
@@ -181,7 +189,7 @@ begin
     port map(
         i_S => i_stall,
         i_D0(0) => i_DMemWr,
-        i_D1(0) => o_DMemWr,
+        i_D1(0) => s_DMemWr_Out,
         o_O(0) => s_DMemWr_stall
     );
 
@@ -205,7 +213,7 @@ begin
     port map(
         i_S => i_stall,
         i_D0(0) => i_Halt,
-        i_D1(0) => o_Halt,
+        i_D1(0) => s_Halt_Out,
         o_O(0) => s_Halt_stall
     );
 
@@ -229,7 +237,7 @@ begin
     port map(
         i_S => i_stall,
         i_D0(0) => i_Branch_Cd,
-        i_D1(0) => o_Branch_Cd,
+        i_D1(0) => s_Branch_Cd_Out,
         o_O(0) => s_Branch_Cd_stall
     );
 
@@ -253,7 +261,7 @@ begin
     port map(
         i_S => i_stall,
         i_D0 => i_Branch,
-        i_D1 => o_Branch,
+        i_D1 => s_Branch_Out,
         o_O => s_Branch_stall
     );
 
@@ -279,7 +287,7 @@ begin
     port map(
         i_S => i_stall,
         i_D0 => i_PC,
-        i_D1 => o_PC,
+        i_D1 => s_PC_Out,
         o_O => s_PC_stall
     );
 
@@ -308,7 +316,7 @@ begin
         i_Rst   => i_Rst,
         i_WE    => '1',
         i_D     => s_PC_stall_final, -- resulting output from mux logic
-        o_Q     => o_PC
+        o_Q     => s_PC_Out
     );
 
     reg_Inst : reg_N
@@ -320,7 +328,7 @@ begin
         i_Rst   => i_Rst,
         i_WE    => '1',
         i_D     => s_Inst_stall_final, -- resulting output from mux logic
-        o_Q     => o_Inst
+        o_Q     => s_Inst_Out
     );
 
     reg_imm : reg_N -- immediate register
@@ -380,7 +388,7 @@ begin
         i_Rst   => i_Rst,
         i_WE    => '1',
         i_D(0)  => s_DMemWr_stall_final, -- output from stall and flush mux logic
-        o_Q(0)  => o_DMemWr
+        o_Q(0)  => s_DMemWr_Out
     );
 
     reg_ALUSrcA : reg_N
@@ -428,7 +436,7 @@ begin
         i_Rst   => i_Rst,
         i_WE    => '1',
         i_D     => s_Branch_stall_final, -- changed from i_Branch
-        o_Q     => o_Branch
+        o_Q     => s_Branch_Out
     );
 
     reg_Branch_Cd : reg_N
@@ -440,7 +448,7 @@ begin
         i_Rst   => i_Rst,
         i_WE    => '1',
         i_D(0)  => s_Branch_Cd_stall_final, -- output from stall and flush mux logic
-        o_Q(0)  => o_Branch_Cd
+        o_Q(0)  => s_Branch_Cd_Out
     );
 
     reg_RegWr : reg_N
@@ -452,7 +460,7 @@ begin
         i_Rst   => i_Rst,
         i_WE    => '1',
         i_D(0)  => s_RegWr_stall_final, -- output from stall and flush mux logic
-        o_Q(0)  => o_RegWr
+        o_Q(0)  => s_RegWr_Out
     );
 
     reg_MemToReg : reg_N
@@ -464,7 +472,7 @@ begin
         i_Rst   => i_Rst,
         i_WE    => '1',
         i_D(0)  => s_MemToReg_stall_final, -- output from stall and flush mux logic
-        o_Q(0)  => o_MemToReg
+        o_Q(0)  => s_MemToReg_Out
     );
 
     reg_Halt : reg_N
@@ -476,7 +484,16 @@ begin
         i_Rst   => i_Rst,
         i_WE    => '1',
         i_D(0)  => s_Halt_stall_final, -- output from stall and flush mux logic
-        o_Q(0)  => o_Halt
+        o_Q(0)  => s_Halt_Out
     );
+
+    o_PC <= s_PC_Out;
+    o_Inst <= s_Inst_Out;
+    o_DMemWr <= s_DMemWr_Out;
+    o_Branch <= s_Branch_Out;
+    o_Branch_Cd <= s_Branch_Cd_Out;
+    o_RegWr <= s_RegWr_Out;
+    o_MemToReg <= s_MemToReg_Out;
+    o_Halt <= s_Halt_Out;
 
 end structure;
