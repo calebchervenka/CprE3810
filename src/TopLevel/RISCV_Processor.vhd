@@ -492,15 +492,15 @@ begin
                 reg_count     => REG_COUNT,
                 data_width    => N)
     port map(
-        i_WD    => s_RegWrData_WB,
+        i_WD    => s_RegWrData_MEM,
         o_RD0   => s_Reg1Data_ID,
         o_RD1   => s_Reg2Data_ID,
         i_RS0   => s_Inst_ID(19 downto 15),
         i_RS1   => s_Inst_ID(24 downto 20),
-        i_RD    => s_RegWrAddr,
-        i_CLK   => iClk,
+        i_RD    => s_Inst_MEM(11 downto 7),
+        i_CLK   => not iClk, -- Negative-edge
         i_RST   => iRst,
-        i_WE    => c_RegWr_WB);
+        i_WE    => c_RegWr_MEM);
   s_DMemData_ID  <= s_Reg2Data_ID;
 
   ID_EX : reg_ID_EX
@@ -645,4 +645,3 @@ begin
   s_Halt <= c_Halt_WB;
 
 end structure;
-

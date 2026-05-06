@@ -7,9 +7,10 @@
 # HAZARD RULES APPLIED:
 #   DATA: Producer at pos P, consumer at pos C: require C - P >= 3
 #         (2 independent instructions between producer and consumer)
-#   CTRL: Branch/jump at pos B: instructions at B+1 and B+2 are always fetched.
-#         If they are squashed on taken path, they must be safe to squash.
-#         Fill with instructions that are useful on not-taken path and safe on taken path.
+#   CTRL: Branch/jump at pos B: instructions at B+1 and B+2 execute as
+#         delay slots on this processor because there is no flush/squash path.
+#         Keep conditional-branch delay slots as NOPs so taken branches match
+#         normal RISC-V behavior.
 #
 # ANNOTATION KEY in comments:
 #   [Dx/2] = data hazard delay slot x of 2
@@ -23,8 +24,11 @@
     temp_array: .space 2048
 
 .text
-    li    sp, 0x10012000
-    li    fp, 0
+    lui   sp, 0x10012
+    nop                          # [D1/2 for lui sp]
+    nop                          # [D2/2 for lui sp]
+    addi  sp, sp, 0
+    addi  fp, x0, 0
     lasw  ra, pump
     j     main
     nop                          # [C1/2] no useful instr available
@@ -61,28 +65,25 @@ main:
 # ------------------------------------------------------------------
 .globl sort
 sort:
-    li    t0, 1
-    addi  sp, sp, -4             # [D1/2 for li t0] * useful
-    nop                          # [D2/2 for li t0]
+    addi  t0, x0, 1
+    addi  sp, sp, -4             # [D1/2 for addi t0] * useful
+    nop                          # [D2/2 for addi t0]
     slt   t1, t0, a1             # t1 = (1 < size)
     sw    ra, 0(sp)              # [D1/2 for slt t1] * useful (sp ready: addi was 3 instrs ago)
     nop                          # [D2/2 for slt t1]
     beq   t1, x0, sort_end
-    mv    a2, a1                 # [C1/2] * a2 = size; squashed if taken (safe)
-    addi  a2, a2, -1             # [C2/2] * a2 = high; squashed if taken (safe)
-    # ^^^ HAZARD EXAMPLE 1 (Control): 2 branch slots filled with useful arg setup.
-    # If branch taken: squashed, sp stays clean since we branch before jal.
-    # If branch not taken: a2 = size-1 = high, exactly what mergesort needs.
-    # Zero NOPs used for this branch.
-    li    a1, 0                  # a1 = low = 0
-    # a2 written 2 instrs ago (addi a2), a1 just written. jal reads both in ID.
+    nop                          # [C1/2] conditional branch delay slot
+    nop                          # [C2/2] conditional branch delay slot
+    addi  a2, a1, -1             # a2 = high = size - 1
+    addi  a1, x0, 0              # a1 = low = 0
+    # a2 written 1 instr before a1, and a1 just written. jal reads both in ID.
     # a2: gap from addi a2 to jal = need >= 3 positions apart.
-    # addi a2 @ -2, li a1 @ -1, nop @ 0, jal @ 1: gap(addi a2, jal) = 3. OK.
+    # addi a2 @ -2, addi a1 @ -1, nop @ 0, jal @ 1: gap(addi a2, jal) = 3. OK.
     nop                          # [D1/2 for a1, a2 combined]
-    # a1 written 2 instrs ago (li a1 @ -2), jal is next @ +1: gap=3. OK.
+    # a1 written 2 instrs ago (addi a1 @ -2), jal is next @ +1: gap=3. OK.
     # Both a1 and a2 safe now with this single nop.
     # ^^^ HAZARD EXAMPLE 2 (Data): Only 1 NOP needed instead of 2 because
-    # the "li a1" instruction between "addi a2" and the jal also serves as
+    # the "addi a1" instruction between "addi a2" and the jal also serves as
     # a delay slot for a2. Single NOP covers both a1 and a2.
     jal   ra, mergesort
     nop                          # [C1/2]
@@ -106,25 +107,16 @@ mergesort:
     nop                          # [D1/2 for t0]
     nop                          # [D2/2 for t0]
     beq   t0, x0, ms_ret        # base case: low >= high, return
-    addi  sp, sp, -16            # [C1/2] * frame alloc; squashed if taken (safe)
-    mv    s0, a1                 # [C2/2] * s0=low; squashed if taken (safe)
-    # ^^^ HAZARD EXAMPLE 3 (Control): Branch to ms_ret fills 2 ctrl slots with
-    # frame allocation and argument save. If taken: pipeline flushes both,
-    # sp unmodified, s0 unmodified - correct. If not taken: both execute
-    # and are necessary. Zero NOPs for control hazard.
+    nop                          # [C1/2] conditional branch delay slot
+    nop                          # [C2/2] conditional branch delay slot
+    addi  sp, sp, -16            # frame alloc
+    mv    s0, a1                 # s0=low
 
-    # sp written by addi sp @ pos 0 (relative to here). sw ra @ pos 2 uses sp.
-    # gap = 2. Exactly safe (need >= 2 between producer and consumer).
-    sw    ra, 12(sp)             # sp gap = 2 (addi sp, mv s0, sw ra). OK.
-    sw    s0,  8(sp)             # s0 gap = 2 (mv s0, sw ra, sw s0). OK.
-    # ^^^ HAZARD EXAMPLE 4 (Data): sp used with gap=2 (minimum), no NOP needed.
-    # s0 also used with gap=2 (minimum), no NOP needed.
-    # Two consecutive stores, both at minimum gap, no NOPs inserted.
-    mv    s1, a2                 # s1 = high
-    sw    s2,  0(sp)             # [D1/2 for mv s1] * save old s2 - independent!
-    sw    s1,  4(sp)             # s1 gap = 2 (mv s1, sw s2, sw s1). OK.
-    # ^^^ HAZARD EXAMPLE 5 (Data): "sw s2" inserted between "mv s1" and "sw s1"
-    # to fill the data hazard slot with a necessary save instruction. Zero NOPs.
+    mv    s1, a2                 # s1 = high; also fills sp/s0 delay
+    sw    ra, 12(sp)             # sp ready
+    sw    s0,  8(sp)             # s0 ready
+    sw    s2,  0(sp)             # save old s2
+    sw    s1,  4(sp)             # s1 ready
 
     add   s2, s0, s1             # s2 = low + high
     nop                          # [D1/2 for add s2]
@@ -133,6 +125,7 @@ mergesort:
 
     # LEFT CALL: mergesort(array, low, mid)
     mv    a1, s0                 # a1 = low
+    nop                          # [D2/2 for srli s2]
     mv    a2, s2                 # a2 = mid
     nop                          # [D1/2 for a1, a2]
     nop                          # [D2/2 for a1, a2]
@@ -192,12 +185,16 @@ merge_loop:
     nop                          # [D1/2 for t4]
     nop                          # [D2/2 for t4]
     bne   t4, x0, merge_right_rem
+    nop                          # [C1/2] conditional branch delay slot
+    nop                          # [C2/2] conditional branch delay slot
 
     # --- check right exhausted: j > high ---
     slt   t4, a3, t1             # t4 = (high < j)?
     nop                          # [D1/2 for t4]
     nop                          # [D2/2 for t4]
     bne   t4, x0, merge_left_rem
+    nop                          # [C1/2] conditional branch delay slot
+    nop                          # [C2/2] conditional branch delay slot
 
     # --- load arr[i] and arr[j] ---
     slli  t6, t0, 2              # t6 = i*4
@@ -221,11 +218,15 @@ merge_loop:
     nop                          # [D1/2 for slt t6]
     nop                          # [D2/2 for slt t6]
     beq   t6, x0, merge_copy_left  # arr[i] <= arr[j]: copy from left
+    nop                          # [C1/2] conditional branch delay slot
+    nop                          # [C2/2] conditional branch delay slot
 
 # --- copy from right: temp[k] = arr[j] ---
 merge_copy_right:
-    slli  t6, t2, 2              # [C1/2] * t6 = k*4
-    add   t6, t3, t6             # [C2/2] * t6 = &temp[k]
+    slli  t6, t2, 2              # t6 = k*4
+    nop                          # [D1/2 for slli t6]
+    nop                          # [D2/2 for slli t6]
+    add   t6, t3, t6             # t6 = &temp[k]
     nop                          # [D1/2 for add t6]
     nop                          # [D2/2 for add t6]
     sw    t5, 0(t6)              # temp[k] = arr[j]
@@ -237,8 +238,10 @@ merge_copy_right:
 
 # --- copy from left: temp[k] = arr[i] ---
 merge_copy_left:
-    slli  t6, t2, 2              # [C1/2] * t6 = k*4
-    add   t6, t3, t6             # [C2/2] * t6 = &temp[k]
+    slli  t6, t2, 2              # t6 = k*4
+    nop                          # [D1/2 for slli t6]
+    nop                          # [D2/2 for slli t6]
+    add   t6, t3, t6             # t6 = &temp[k]
     nop                          # [D1/2 for add t6]
     nop                          # [D2/2 for add t6]
     sw    t4, 0(t6)              # temp[k] = arr[i]
@@ -254,14 +257,19 @@ merge_left_rem:
     nop                          # [D1/2 for t4]
     nop                          # [D2/2 for t4]
     bne   t4, x0, merge_copy_back
-    slli  t6, t0, 2              # [C1/2] * t6 = i*4
-    add   t6, a0, t6             # [C2/2] * t6 = &arr[i]
+    nop                          # [C1/2] conditional branch delay slot
+    nop                          # [C2/2] conditional branch delay slot
+    slli  t6, t0, 2              # t6 = i*4
+    nop                          # [D1/2 for slli t6]
+    nop                          # [D2/2 for slli t6]
+    add   t6, a0, t6             # t6 = &arr[i]
     nop                          # [D1/2 for add t6]
     nop                          # [D2/2 for add t6]
     lw    t4, 0(t6)              # t4 = arr[i]
     slli  t6, t2, 2              # [D1/2 for lw t4] * t6 = k*4
-    add   t6, t3, t6             # [D2/2 for lw t4] * t6 = &temp[k]
-    # ^^^ Both lw delay slots filled with &temp[k] calculation. Zero NOPs.
+    nop                          # [D2/2 for lw t4], [D1/2 for slli t6]
+    nop                          # [D2/2 for slli t6]
+    add   t6, t3, t6             # t6 = &temp[k]
     nop                          # [D1/2 for add t6 (second)]
     nop                          # [D2/2 for add t6 (second)]
     sw    t4, 0(t6)              # temp[k] = arr[i]
@@ -277,13 +285,19 @@ merge_right_rem:
     nop                          # [D1/2 for t4]
     nop                          # [D2/2 for t4]
     bne   t4, x0, merge_copy_back
-    slli  t6, t1, 2              # [C1/2] * t6 = j*4
-    add   t6, a0, t6             # [C2/2] * t6 = &arr[j]
+    nop                          # [C1/2] conditional branch delay slot
+    nop                          # [C2/2] conditional branch delay slot
+    slli  t6, t1, 2              # t6 = j*4
+    nop                          # [D1/2 for slli t6]
+    nop                          # [D2/2 for slli t6]
+    add   t6, a0, t6             # t6 = &arr[j]
     nop                          # [D1/2 for add t6]
     nop                          # [D2/2 for add t6]
     lw    t5, 0(t6)              # t5 = arr[j]
     slli  t6, t2, 2              # [D1/2 for lw t5] * t6 = k*4
-    add   t6, t3, t6             # [D2/2 for lw t5] * t6 = &temp[k]
+    nop                          # [D2/2 for lw t5], [D1/2 for slli t6]
+    nop                          # [D2/2 for slli t6]
+    add   t6, t3, t6             # t6 = &temp[k]
     nop                          # [D1/2 for add t6 (second)]
     nop                          # [D2/2 for add t6 (second)]
     sw    t5, 0(t6)              # temp[k] = arr[j]
@@ -296,18 +310,26 @@ merge_right_rem:
 # --- copy temp back to array ---
 merge_copy_back:
     mv    t0, a1                 # k = low (reset)
+    nop                          # [D1/2 for t0]
+    nop                          # [D2/2 for t0]
 merge_copy_back_loop:
     slt   t4, a3, t0             # t4 = (high < k)?
     nop                          # [D1/2 for t4]
     nop                          # [D2/2 for t4]
     bne   t4, x0, merge_ret
-    slli  t4, t0, 2              # [C1/2] * t4 = k*4
-    add   t4, t3, t4             # [C2/2] * t4 = &temp[k]
+    nop                          # [C1/2] conditional branch delay slot
+    nop                          # [C2/2] conditional branch delay slot
+    slli  t4, t0, 2              # t4 = k*4
+    nop                          # [D1/2 for slli t4]
+    nop                          # [D2/2 for slli t4]
+    add   t4, t3, t4             # t4 = &temp[k]
     nop                          # [D1/2 for add t4]
     nop                          # [D2/2 for add t4]
     lw    t4, 0(t4)              # t4 = temp[k]
     slli  t5, t0, 2              # [D1/2 for lw t4] * t5 = k*4
-    add   t5, a0, t5             # [D2/2 for lw t4] * t5 = &arr[k]
+    nop                          # [D2/2 for lw t4], [D1/2 for slli t5]
+    nop                          # [D2/2 for slli t5]
+    add   t5, a0, t5             # t5 = &arr[k]
     nop                          # [D1/2 for add t5]
     nop                          # [D2/2 for add t5]
     sw    t4, 0(t5)              # arr[k] = temp[k]
