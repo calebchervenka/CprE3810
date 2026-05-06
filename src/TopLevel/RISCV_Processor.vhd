@@ -85,6 +85,7 @@ architecture structure of RISCV_Processor is
   signal s_Imm_EX       : std_logic_vector(N-1 downto 0);
   signal s_Inst_EX      : std_logic_vector(N-1 downto 0);
   signal s_DMemData_EX   : std_logic_vector(N-1 downto 0);
+  signal s_DMemData_EX_forwarded : std_logic_vector(N-1 downto 0);
   signal s_RD0_EX       : std_logic_vector(N-1 downto 0);
   signal s_RD1_EX       : std_logic_vector(N-1 downto 0);
 
@@ -444,24 +445,28 @@ architecture structure of RISCV_Processor is
 begin
   s_Ovfl <= '0';
 
-  flush_not_branch0 : entity work.invg(dataflow)
-    port map(i_A => c_Branch_EX(0),
-             o_F => s_NotBranch0_EX);
+  -- flush_not_branch0 : invg
+  --   port map(i_A => c_Branch_EX(0),
+  --            o_F => s_NotBranch0_EX);
+  s_NotBranch0_EX <= not c_Branch_EX(0);
 
-  flush_cond_branch : entity work.andg2(dataflow)
-    port map(i_A => c_Branch_EX(1),
-             i_B => s_NotBranch0_EX,
-             o_F => s_CondBranch_EX);
+  -- flush_cond_branch : andg2
+  --   port map(i_A => c_Branch_EX(1),
+  --            i_B => s_NotBranch0_EX,
+  --            o_F => s_CondBranch_EX);
+  s_CondBranch_EX <= c_Branch_EX(1) and not c_Branch_EX(0);
 
-  flush_taken_branch : entity work.andg2(dataflow)
-    port map(i_A => s_CondBranch_EX,
-             i_B => s_ALUResult_EX(0),
-             o_F => s_TakenBranch_EX);
+  -- flush_taken_branch : andg2
+  --   port map(i_A => s_CondBranch_EX,
+  --            i_B => s_ALUResult_EX(0),
+  --            o_F => s_TakenBranch_EX);
+  s_TakenBranch_EX <= (c_Branch_EX(1) and not c_Branch_EX(0)) and s_ALUResult_EX(0);
 
-  flush_redirect : entity work.org2(dataflow)
-    port map(i_A => c_Branch_EX(0),
-             i_B => s_TakenBranch_EX,
-             o_F => s_Flush_EX);
+  -- flush_redirect : org2
+  --   port map(i_A => c_Branch_EX(0),
+  --            i_B => s_TakenBranch_EX,
+  --            o_F => s_Flush_EX);
+  s_Flush_EX <= c_Branch_EX(0) or ((c_Branch_EX(1) and not c_Branch_EX(0)) and s_ALUResult_EX(0));
 
   with iInstLd select
     s_IMemAddr <= s_PC_IF when '0',
@@ -634,6 +639,17 @@ begin
              i_D3 => s_ImmU_EX,
              o_O  => s_ALU_B_EX);
 
+  mux_dmem_data_fw : mux4t1_N
+    generic map(N => N)
+    port map(
+      i_S   => c_Fwd_Rd2_from_wb & c_Fwd_Rd2_from_mem,
+      i_D0  => s_DMemData_EX,
+      i_D1  => s_RegWrData_MEM,
+      i_D2  => s_RegWrData_WB,
+      i_D3  => s_RegWrData_MEM,
+      o_O   => s_DMemData_EX_forwarded
+    );
+
   alu_inst : alu
     generic map(DATA_WIDTH => N)
     port map(i_A      => s_ALU_A_EX,
@@ -652,7 +668,7 @@ begin
       i_LD    =>  '1',
       i_PC    =>  s_PC_EX, o_PC    =>  s_PC_Mem,
       i_Inst => s_Inst_EX, o_Inst => s_Inst_MEM,
-      i_DMemData  => s_DMemData_EX, o_DMemData => s_DMemData_MEM,
+      i_DMemData  => s_DMemData_EX_forwarded, o_DMemData => s_DMemData_MEM,
       i_DMemWr => s_DMemWr_EX, o_DMemWr => s_DMemWr_MEM,
       i_ALUResult => s_ALUResult_EX, o_ALUResult => s_ALUResult_MEM,
       -- i_LoadData  => s_LoadData_EX, o_LoadData  => s_LoadData_MEM,
@@ -684,6 +700,7 @@ begin
     port map(
       i_S  => c_FW_DMemData,
       i_D0 => s_DMemData_MEM,
+      -- i_D0 => s_ALUResult_EX,
       i_D1 => s_RegWrData_WB,
       -- i_D1 => s_ALUResult_WB,
       o_O  => s_DMemData

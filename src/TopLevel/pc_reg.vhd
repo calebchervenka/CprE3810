@@ -66,29 +66,34 @@ architecture structural of pc_reg is
     signal s_taken_branch : std_logic;
 
     begin
-        not_branch0 : entity work.invg(dataflow)
-            port map(i_A => i_Branch(0),
-                     o_F => s_not_branch0);
+        -- not_branch0 : entity work.invg(dataflow)
+        --     port map(i_A => i_Branch(0),
+        --              o_F => s_not_branch0);
+        s_not_branch0 <= not i_Branch(0);
 
-        cond_branch : entity work.andg2(dataflow)
-            port map(i_A => i_Branch(1),
-                     i_B => s_not_branch0,
-                     o_F => s_cond_branch);
+        -- cond_branch : entity work.andg2(dataflow)
+        --     port map(i_A => i_Branch(1),
+        --              i_B => s_not_branch0,
+        --              o_F => s_cond_branch);
+        s_cond_branch <= i_Branch(1) and not i_Branch(0);
 
-        taken_branch : entity work.andg2(dataflow)
-            port map(i_A => s_cond_branch,
-                     i_B => i_BranchCondition,
-                     o_F => s_taken_branch);
+        -- taken_branch : entity work.andg2(dataflow)
+        --     port map(i_A => s_cond_branch,
+        --              i_B => i_BranchCondition,
+        --              o_F => s_taken_branch);
+        s_taken_branch <= (i_Branch(1) and not i_Branch(0)) and i_BranchCondition;
 
-        redirect : entity work.org2(dataflow)
-            port map(i_A => i_Branch(0),
-                     i_B => s_taken_branch,
-                     o_F => s_redirect);
+        -- redirect : entity work.org2(dataflow)
+        --     port map(i_A => i_Branch(0),
+        --              i_B => s_taken_branch,
+        --              o_F => s_redirect);
+        s_redirect <= i_Branch(0) or ((i_Branch(1) and not i_Branch(0)) and i_BranchCondition);
 
-        jalr_branch : entity work.andg2(dataflow)
-            port map(i_A => i_Branch(1),
-                     i_B => i_Branch(0),
-                     o_F => s_jalr);
+        -- jalr_branch : entity work.andg2(dataflow)
+        --     port map(i_A => i_Branch(1),
+        --              i_B => i_Branch(0),
+        --              o_F => s_jalr);
+        s_jalr <= i_Branch(1) and i_Branch(0);
 
         reg : reg_N
         port map(
